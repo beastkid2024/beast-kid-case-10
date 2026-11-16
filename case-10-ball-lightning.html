@@ -1,0 +1,2301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b0e16">
+<meta name="description" content="Beast Kid: Case Files — Case #10: Ball Lightning. A free point-and-click detective game. Search the evidence, question the witnesses, match it on the deduction board, close the case.">
+<title>Beast Kid: Case Files — Ball Lightning</title>
+<style>
+/* Beast Kid: Case Files — noir detective theme. Mobile-first, responsive. */
+:root {
+  --ink: #e8e2d2;
+  --ink-dim: #a89f88;
+  --bg: #0b0e16;
+  --panel: #141a28;
+  --panel2: #1c2438;
+  --gold: #d8a94e;
+  --gold-hi: #f2cd7d;
+  --red: #b0523c;
+  --teal: #5f8f8a;
+  --line: #2c3650;
+  --radius: 12px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+#app { width: 100%; max-width: 960px; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+.hidden { display: none !important; }
+
+/* ---------- HUD ---------- */
+#hud {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: rgba(10, 13, 22, 0.96);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 40;
+  font-size: 15px;
+}
+#hud .brand { font-weight: bold; color: var(--gold); letter-spacing: 1px; margin-right: auto; white-space: nowrap; }
+#hud .brand .brand-short { display: none; }
+.hud-stat { color: var(--ink-dim); white-space: nowrap; }
+.hud-stat b { color: var(--ink); }
+.hud-btns { display: flex; gap: 6px; margin-left: 6px; }
+.icon-btn {
+  background: var(--panel2); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 8px;
+  min-width: 42px; min-height: 42px; font-size: 18px; cursor: pointer;
+  touch-action: manipulation; padding: 0 6px;
+}
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn:disabled { opacity: 0.45; }
+
+/* ---------- screens ---------- */
+#stage { flex: 1; display: flex; flex-direction: column; padding: 14px; }
+.screen { animation: fadein 0.35s ease; }
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+/* title */
+#screen-title { text-align: center; padding: 34px 12px; position: relative; overflow: hidden; border-radius: var(--radius); }
+#title-keyart { position: absolute; inset: 0; z-index: 0; }
+#title-keyart img { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; display: block; }
+#title-keyart::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,14,22,0.55), rgba(11,14,22,0.88)); }
+#title-inner { position: relative; z-index: 1; }
+.game-kicker { color: var(--gold); letter-spacing: 4px; font-size: 13px; text-transform: uppercase; }
+.game-title { font-size: clamp(30px, 7vw, 52px); margin: 10px 0 4px; color: var(--ink); text-shadow: 0 2px 14px rgba(0,0,0,0.8); }
+.game-title em { color: var(--gold-hi); font-style: normal; }
+.game-sub { color: var(--ink-dim); font-style: italic; margin-bottom: 26px; text-shadow: 0 1px 8px rgba(0,0,0,0.8); }
+#best-line { color: var(--teal); font-size: 14px; margin: -14px 0 18px; }
+.title-art { font-size: 54px; margin: 6px 0 18px; filter: drop-shadow(0 4px 18px rgba(216,169,78,0.35)); }
+
+/* buttons */
+.btn {
+  display: block; width: 100%;
+  background: var(--panel2); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 13px 16px; margin: 8px 0; font-size: 16px; font-family: inherit;
+  cursor: pointer; text-align: center; touch-action: manipulation;
+}
+.btn small { display: block; color: var(--ink-dim); font-size: 12px; margin-top: 3px; }
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #241a08; font-weight: bold; border: none; }
+.btn.primary:disabled { background: var(--panel2); color: var(--ink-dim); font-weight: normal; }
+.btn.topic { text-align: left; }
+.btn.topic.locked { opacity: 0.55; }
+.btn-row { display: flex; gap: 10px; }
+.btn-row .btn { flex: 1; }
+
+/* intro */
+#screen-intro { max-width: 620px; margin: 30px auto; text-align: center; }
+#intro-kicker { color: var(--gold); letter-spacing: 3px; font-size: 12px; text-transform: uppercase; }
+#intro-title { font-size: clamp(24px, 5vw, 36px); margin: 8px 0 14px; }
+#intro-text { font-size: 18px; line-height: 1.65; color: var(--ink); }
+#intro-count { color: var(--ink-dim); margin: 18px 0 6px; font-size: 13px; }
+
+/* map */
+.map-head { text-align: center; margin-bottom: 8px; }
+.map-head h2 { margin: 6px 0 2px; }
+.map-head p { color: var(--ink-dim); margin: 0 0 10px; }
+#map-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.map-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px; text-align: left; color: var(--ink); font-family: inherit; cursor: pointer;
+  touch-action: manipulation;
+}
+.map-card:active { transform: scale(0.98); }
+.map-card.locked { opacity: 0.6; cursor: not-allowed; }
+.map-card-name { font-size: 18px; font-weight: bold; }
+.map-card-sub { color: var(--ink-dim); font-size: 13px; margin: 4px 0 8px; font-style: italic; }
+.map-card-progress { color: var(--teal); font-size: 14px; }
+.map-card-lock { color: var(--ink-dim); font-size: 14px; }
+#btn-deduction { margin-top: 14px; font-size: 18px; }
+
+/* scene */
+.scene-head h2 { margin: 4px 0 0; }
+.scene-head .sub { color: var(--gold); font-style: italic; font-size: 14px; }
+.scene-head .blurb { color: var(--ink-dim); font-style: italic; margin: 6px 0 10px; line-height: 1.5; }
+.scene-frame { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); aspect-ratio: 8 / 5; background: #000; }
+.scene-frame svg { width: 100%; height: 100%; display: block; }
+.scene-frame img.scene-bg { width: 100%; height: 100%; object-fit: cover; display: block; }
+#hotspot-layer { position: absolute; inset: 0; }
+.hotspot {
+  position: absolute; width: 52px; height: 52px; margin: -26px 0 0 -26px;
+  border-radius: 50%; border: 2px solid var(--gold-hi);
+  background: rgba(216, 169, 78, 0.18); color: var(--gold-hi);
+  font-size: 22px; font-weight: bold; cursor: pointer;
+  animation: pulse 2.2s infinite; touch-action: manipulation;
+}
+.hotspot span { pointer-events: none; }
+.hotspot.found { border-color: var(--teal); color: var(--teal); background: rgba(95,143,138,0.15); animation: none; }
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(242, 205, 125, 0.55); }
+  50% { box-shadow: 0 0 0 12px rgba(242, 205, 125, 0); }
+}
+.hotspot.pulse { animation: pulse 0.9s 3; border-color: #fff; }
+#talk-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.talk-chip {
+  background: var(--panel2); border: 1px solid var(--gold); color: var(--gold-hi);
+  border-radius: 999px; padding: 10px 16px; font-size: 15px; font-family: inherit; cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* modal */
+#modal-root { position: fixed; inset: 0; z-index: 60; display: none; }
+#modal-root.open { display: block; }
+.modal-back { position: absolute; inset: 0; background: rgba(4, 6, 12, 0.78); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal {
+  background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius);
+  max-width: 560px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 20px;
+  animation: fadein 0.25s ease;
+}
+.modal h3 { margin-top: 0; color: var(--gold-hi); }
+.modal p { line-height: 1.6; }
+.clue-head { display: flex; align-items: center; gap: 12px; }
+.clue-icon { font-size: 40px; }
+.clue-points { color: var(--teal); font-size: 14px; margin: 8px 0; }
+.npc-head { display: flex; gap: 14px; align-items: flex-start; }
+.npc-head .npc-titles { flex: 1; }
+.npc-head h3 { margin: 0; }
+.npc-role { color: var(--ink-dim); font-size: 13px; font-style: italic; }
+.npc-portrait { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); flex-shrink: 0; }
+.npc-intro { color: var(--ink-dim); font-style: italic; }
+.topics { margin: 12px 0; }
+.modal .q { font-style: italic; color: var(--gold-hi); }
+.modal .a { border-left: 3px solid var(--gold); padding-left: 12px; }
+.fx { background: var(--panel2); border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-size: 14px; }
+.fx.big { border: 1px solid var(--gold); color: var(--gold-hi); font-weight: bold; }
+
+/* journal */
+#journal {
+  position: fixed; top: 0; right: -100%; width: min(420px, 94vw); height: 100vh; z-index: 55;
+  background: #10141f; border-left: 1px solid var(--gold);
+  transition: right 0.3s ease; display: flex; flex-direction: column;
+}
+#journal.open { right: 0; }
+.journal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.journal-head h3 { margin: 0; color: var(--gold-hi); }
+#journal-body { overflow-y: auto; padding: 12px 16px; flex: 1; }
+.j-sec { margin: 10px 0 6px; color: var(--gold); }
+.j-clue { display: flex; gap: 10px; margin: 10px 0; background: var(--panel); border-radius: 8px; padding: 10px; }
+.j-icon { font-size: 26px; }
+.j-clue p { margin: 4px 0 0; font-size: 14px; color: var(--ink-dim); line-height: 1.5; }
+.j-note { background: var(--panel2); border-radius: 8px; padding: 8px 10px; margin: 6px 0; font-size: 14px; }
+.j-empty { color: var(--ink-dim); font-style: italic; }
+
+/* deduction board — drag-and-drop evidence matching */
+.ded-head { text-align: center; }
+.ded-head h2 { margin: 6px 0 2px; }
+#ded-progress { color: var(--ink-dim); margin-bottom: 12px; }
+#evidence-pool {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  background: var(--panel); border: 1px dashed var(--line); border-radius: var(--radius);
+  padding: 12px; margin-bottom: 14px; min-height: 64px;
+}
+.pool-label { width: 100%; text-align: center; color: var(--ink-dim); font-size: 13px; font-style: italic; margin: 0 0 4px; }
+.ev-chip {
+  background: var(--panel2); border: 1px solid var(--gold); color: var(--ink);
+  border-radius: 999px; padding: 9px 14px; font-size: 14px; font-family: inherit; cursor: grab;
+  touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.ev-chip:active { cursor: grabbing; }
+.ev-chip.selected { outline: 2px solid #fff; background: #2a3550; }
+.ev-chip.drag-ghost {
+  position: fixed; z-index: 90; pointer-events: none; opacity: 0.92;
+  transform: translate(-50%, -50%) scale(1.06); margin: 0;
+}
+#theory-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.theory-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; transition: border-color 0.2s, box-shadow 0.2s; }
+.theory-card h4 { margin: 0 0 6px; color: var(--gold-hi); font-size: 18px; }
+.theory-card p { color: var(--ink-dim); font-style: italic; font-size: 14px; line-height: 1.5; }
+.theory-card.drop-hover { border-color: var(--gold-hi); box-shadow: 0 0 0 3px rgba(242,205,125,0.25); }
+.theory-card.shake { animation: shake 0.4s ease; border-color: var(--red); }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-7px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-4px); }
+}
+.ev-slots { list-style: none; padding: 0; margin: 10px 0; display: flex; flex-direction: column; gap: 8px; }
+.ev-slot {
+  border: 1px dashed var(--line); border-radius: 8px; padding: 9px 12px; font-size: 14px;
+  color: var(--ink-dim); min-height: 40px; display: flex; align-items: center; gap: 8px;
+}
+.ev-slot.filled { border-style: solid; border-color: var(--teal); color: var(--ink); background: rgba(95,143,138,0.10); }
+.ev-slot.missing { opacity: 0.5; }
+#btn-close-case { margin-top: 14px; font-size: 18px; }
+#btn-ded-map { margin-top: 4px; }
+
+/* results */
+#screen-results { max-width: 640px; margin: 20px auto; text-align: center; }
+.res-rank { font-size: clamp(28px, 6vw, 44px); color: var(--gold-hi); margin: 4px 0; }
+#res-stars { font-size: 40px; margin: 2px 0 6px; letter-spacing: 4px; color: var(--gold-hi); }
+#res-badge { display: inline-block; border: 1px solid var(--gold); border-radius: 999px; padding: 8px 18px; color: var(--gold-hi); font-size: 15px; margin: 6px 0 4px; background: rgba(216,169,78,0.08); }
+.res-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 12px 0; text-align: left; }
+.res-box h4 { margin: 0 0 8px; color: var(--gold); }
+.res-box ul { margin: 0; padding-left: 20px; line-height: 1.9; }
+.res-box li.total { list-style: none; margin-left: -20px; border-top: 1px solid var(--line); padding-top: 8px; font-size: 18px; }
+.res-theory-block { margin: 10px 0; }
+.res-theory-block b { color: var(--gold-hi); }
+.real-note { color: var(--ink-dim); font-style: italic; line-height: 1.6; margin: 14px 0; }
+.next-case { border: 1px dashed var(--gold); border-radius: var(--radius); padding: 12px; margin: 12px 0; color: var(--gold-hi); }
+
+/* toast */
+#toast-root { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 70; width: min(520px, 92vw); pointer-events: none; }
+.toast {
+  background: #1d2536; border: 1px solid var(--gold); color: var(--ink);
+  border-radius: 10px; padding: 12px 16px; margin-top: 8px; font-size: 15px; line-height: 1.5;
+  opacity: 0; transform: translateY(10px); transition: all 0.3s ease;
+}
+.toast.show { opacity: 1; transform: none; }
+
+/* pause */
+#pause-menu { position: fixed; inset: 0; z-index: 65; display: none; background: rgba(4,6,12,0.85); align-items: center; justify-content: center; padding: 16px; }
+#pause-menu.open { display: flex; }
+.pause-box { background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius); padding: 24px; width: min(380px, 92vw); }
+.pause-box h3 { margin-top: 0; color: var(--gold-hi); text-align: center; }
+
+footer { text-align: center; color: var(--ink-dim); font-size: 12px; padding: 14px; }
+
+
+/* ---------- case 6: set piece + twist ---------- */
+#setpiece-panel { background: var(--panel); border: 1px dashed var(--gold); border-radius: var(--radius); padding: 12px 14px; margin-top: 12px; line-height: 1.55; }
+#setpiece-panel .btn { margin-bottom: 0; }
+#ls-area { position: relative; height: 260px; background: linear-gradient(180deg, #33456e, #8a7ab8 55%, #b3c6de); border-radius: 10px; overflow: hidden; margin: 10px 0; }
+.lantern-marker { position: absolute; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; border: 2px solid #ffd166; background: rgba(255,209,102,0.28); font-size: 24px; cursor: pointer; touch-action: manipulation; padding: 0; }
+.spark-terminal { position: absolute; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; border: 3px solid #ffd166; background: rgba(255,209,102,0.30); font-size: 20px; font-weight: bold; color: #ffe9a8; cursor: pointer; touch-action: manipulation; padding: 0; }
+.spark-terminal.connected { background: #ffd166; color: #4a2c00; border-color: #fff2b0; cursor: default; }
+.spark-terminal.wrong { border-color: #ff7a6a; background: rgba(255,122,106,0.35); }
+.ls-hud { display: flex; gap: 18px; font-size: 16px; margin: 6px 0; flex-wrap: wrap; }
+.twist-banner { background: linear-gradient(180deg, #f2cd7d, #d8a94e); color: #241a08; border-radius: 10px; padding: 12px 14px; font-weight: bold; text-align: center; font-size: 19px; margin-bottom: 10px; }
+#journal-body s { color: #e88a7a; }
+
+/* ---------- mobile: keep every HUD control visible & tappable ---------- */
+@media (max-width: 560px) {
+  #hud { font-size: 12px; padding: 8px 6px; gap: 5px; }
+  #hud .brand { font-size: 12px; letter-spacing: 0.5px; margin-right: auto; }
+  #hud .brand .brand-full { display: none; }
+  #hud .brand .brand-short { display: inline; }
+  .hud-stat { font-size: 12px; }
+  .hud-btns { gap: 4px; margin-left: 2px; }
+  .icon-btn { min-width: 38px; min-height: 38px; font-size: 16px; padding: 0 4px; }
+  #stage { padding: 10px; }
+  .hotspot { width: 56px; height: 56px; margin: -28px 0 0 -28px; }
+  .ev-chip { font-size: 13px; padding: 8px 12px; }
+  #res-stars { font-size: 34px; }
+}
+
+</style>
+<!--
+  CrazyGames SDK integration point:
+  CrazyGames injects their official SDK script on their portal during/after
+  submission. This build calls window.CrazyGames.SDK only through the Platform
+  adapter below, which safely no-ops when the SDK is absent (itch.io / local).
+  No SDK script tag is bundled — nothing to change between portals.
+-->
+</head>
+<body>
+<div id="app">
+
+  <header id="hud" class="hidden">
+    <div class="brand"><span class="brand-full">BEAST KID: CASE FILES</span><span class="brand-short">BK</span></div>
+    <div class="hud-stat">🔍 <b id="hud-clues">0/8</b></div>
+    <div class="hud-stat">⏱️ <b id="hud-time">00:00</b></div>
+    <div class="hud-stat">⭐ <b id="hud-score">0</b></div>
+    <div class="hud-btns">
+      <button class="icon-btn" id="btn-journal" title="Detective's journal" aria-label="Open journal">📋</button>
+      <button class="icon-btn" id="btn-hint" title="Get a hint" aria-label="Get a hint">💡</button>
+      <button class="icon-btn" id="btn-mute" title="Mute" aria-label="Mute">🔊</button>
+      <button class="icon-btn" id="btn-pause" title="Pause" aria-label="Pause">⏸️</button>
+    </div>
+  </header>
+
+  <main id="stage">
+
+    <!-- TITLE -->
+    <section id="screen-title" class="screen">
+      <div id="title-keyart"></div>
+      <div id="title-inner">
+        <div class="game-kicker">Beast Kid presents</div>
+        <h1 class="game-title">CASE FILES <em>— No. 10</em></h1>
+        <div class="title-art">⚡</div>
+        <h2 class="game-sub">Ball Lightning · A Village Green Mystery</h2>
+        <p class="game-sub">A glowing sphere, drifting over the green — humming softly, then gone with a pop.<br>Eight clues. One deduction board. The truth is yours to find.</p>
+        <p id="best-line" class="hidden"></p>
+        <button class="btn primary" id="btn-begin">🔍 Begin the investigation</button>
+        <button class="btn" id="btn-how">How to play</button>
+      </div>
+    </section>
+
+    <!-- INTRO -->
+    <section id="screen-intro" class="screen hidden">
+      <div id="intro-kicker"></div>
+      <h2 id="intro-title"></h2>
+      <p id="intro-text"></p>
+      <div id="intro-count"></div>
+      <div class="btn-row">
+        <button class="btn" id="btn-intro-back">← Back</button>
+        <button class="btn primary" id="btn-intro-next">Next →</button>
+      </div>
+    </section>
+
+    <!-- MAP -->
+    <section id="screen-map" class="screen hidden">
+      <div class="map-head">
+        <h2>🗺️ Case map — The Village and Lightning Ridge</h2>
+        <p>Travel between locations. Find the evidence. Talk to everyone.</p>
+      </div>
+      <div id="map-cards"></div>
+      <button class="btn primary" id="btn-deduction" disabled></button>
+    </section>
+
+    <!-- SCENE -->
+    <section id="screen-scene" class="screen hidden">
+      <div class="scene-head">
+        <h2 id="scene-name"></h2>
+        <div class="sub" id="scene-sub"></div>
+        <p class="blurb" id="scene-blurb"></p>
+      </div>
+      <div class="scene-frame">
+        <div id="scene-art"></div>
+        <div id="hotspot-layer"></div>
+      </div>
+      <div id="talk-row"></div>
+      <div id="setpiece-panel" class="hidden"></div>
+      <button class="btn" id="btn-map" style="margin-top:12px">← Back to case map</button>
+    </section>
+
+    <!-- DEDUCTION -->
+    <section id="screen-deduction" class="screen hidden">
+      <div class="ded-head">
+        <h2>🧬 The deduction board</h2>
+        <p id="ded-progress"></p>
+        <p style="color:var(--ink-dim);font-style:italic">Three theories. Your evidence. Drag each clue onto the theory it supports — every theory needs its links. A wrong fit just bounces back; a right fit locks in.</p>
+      </div>
+      <div id="evidence-pool"></div>
+      <div id="theory-cards"></div>
+      <button class="btn primary" id="btn-close-case" disabled>🔒 Close the case</button>
+      <button class="btn" id="btn-ded-map">← Keep investigating</button>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="screen-results" class="screen hidden">
+      <div class="game-kicker">Case closed</div>
+      <div class="res-rank" id="res-rank"></div>
+      <div id="res-stars"></div>
+      <div><span id="res-badge" class="hidden"></span></div>
+      <div class="res-box">
+        <h4>🧬 Your deduction board</h4>
+        <div id="res-board"></div>
+      </div>
+      <div class="res-box" id="res-setpiece-box">
+        <h4>⚡ Guide the Glowing Sphere! — set piece</h4>
+        <div id="res-setpiece"></div>
+      </div>
+      <div class="res-box">
+        <h4>⭐ Score breakdown</h4>
+        <ul id="res-score"></ul>
+      </div>
+      <p class="real-note">The real story: for centuries, witnesses in thunderstorms have reported ball lightning — glowing spheres about the size of a grapefruit that drift through the air, hum softly, smell of ozone, and vanish with a pop. The leading modern explanation is the Abrahamson and Dinniss theory: lightning striking soil vaporises silicon and minerals, and the hot vapour forms a glowing ball that drifts while it slowly burns and cools — an effect scientists have recreated in laboratories by vaporising soil samples. Other honest ideas include a floating ball of pure storm electricity and an optical afterimage on the eye. This game presents the glowing-vapour reading as its correct answer. Your deduction is your own.</p>
+      <div class="next-case">🔜 <b>Next case file:</b> a brand-new unsolved mystery drops every Monday. Stay sharp, detective.</div>
+      <button class="btn primary" id="btn-again">🔁 Play again</button>
+    </section>
+
+  </main>
+
+  <footer>Beast Kid: Case Files · free to play · a Beast Kid mystery</footer>
+</div>
+
+<!-- JOURNAL -->
+<aside id="journal" aria-label="Detective's journal">
+  <div class="journal-head">
+    <h3>📋 Detective’s journal</h3>
+    <button class="icon-btn" id="journal-close" aria-label="Close journal">✕</button>
+  </div>
+  <div id="journal-body"></div>
+</aside>
+
+<!-- PAUSE -->
+<div id="pause-menu">
+  <div class="pause-box">
+    <h3>⏸️ Paused</h3>
+    <button class="btn primary" id="btn-resume">Resume</button>
+    <button class="btn" id="btn-pause-how">How to play</button>
+    <button class="btn" id="btn-restart">Restart case</button>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<!-- inlined js/platform.js -->
+<!-- inlined js/audio.js -->
+<!-- inlined js/data.js (data-case2.js, via build-inline.js) -->
+<!-- inlined art manifest (via build-inline.js) -->
+<!-- inlined js/game.js -->
+<script>
+/* =========================================================================
+ * platform.js — CrazyGames SDK (v3) adapter + standalone fallback
+ * -------------------------------------------------------------------------
+ * INTEGRATION POINT — how the CrazyGames SDK gets into the page:
+ *   CrazyGames injects their official SDK script into the game page on
+ *   THEIR portal during/after submission (this is how their HTML5 pipeline
+ *   works — the game code itself only needs to call window.CrazyGames.SDK).
+ *   Nothing is bundled here and no script URL is guessed.
+ *
+ * Every method below is guarded: when the game runs on itch.io, locally,
+ * or anywhere outside CrazyGames, window.CrazyGames is undefined and every
+ * call safely no-ops. The SAME build therefore works on both portals with
+ * zero changes.
+ *
+ * Verified against CrazyGames SDK v3 docs (Sept 2026):
+ *   - game.gameplayStart()  — entering/resuming active gameplay
+ *   - game.gameplayStop()   — menus, pauses, breaks (NOT tab blur; CG handles)
+ *   - game.sdkGameLoadingStart/Stop() — asset loading signals
+ *   - game.happyTime()      — positive player moment (boosts ad yield)
+ *   - ad.requestAd("midgame", {adStarted, adFinished, adError})
+ *   - ad.requestAd("rewarded", {adStarted, adFinished, adError})
+ *     * grant rewarded items ONLY on adFinished; adError = no reward
+ *     * midgame ads only at natural gameplay breaks, never mid-action
+ * ========================================================================= */
+(function (root) {
+  "use strict";
+
+  function getSDK() {
+    try {
+      return root.CrazyGames && root.CrazyGames.SDK ? root.CrazyGames.SDK : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  var Platform = {
+    /** true when actually running inside the CrazyGames portal */
+    get isCrazyGames() {
+      return !!getSDK();
+    },
+
+    /** call once during boot */
+    loadingStart: function () {
+      var sdk = getSDK();
+      if (sdk && sdk.game && sdk.game.sdkGameLoadingStart) {
+        try { sdk.game.sdkGameLoadingStart(); } catch (e) {}
+      }
+    },
+
+    /** call once boot is complete */
+    loadingDone: function () {
+      var sdk = getSDK();
+      if (sdk && sdk.game && sdk.game.sdkGameLoadingStop) {
+        try { sdk.game.sdkGameLoadingStop(); } catch (e) {}
+      }
+    },
+
+    /** player entered or resumed active gameplay */
+    gameplayStart: function () {
+      var sdk = getSDK();
+      if (sdk && sdk.game && sdk.game.gameplayStart) {
+        try { sdk.game.gameplayStart(); } catch (e) {}
+      }
+    },
+
+    /** player hit a break: pause menu, map, deduction board, results */
+    gameplayStop: function () {
+      var sdk = getSDK();
+      if (sdk && sdk.game && sdk.game.gameplayStop) {
+        try { sdk.game.gameplayStop(); } catch (e) {}
+      }
+    },
+
+    /** positive moment — called when the case is solved */
+    happyTime: function () {
+      var sdk = getSDK();
+      if (sdk && sdk.game && sdk.game.happyTime) {
+        try { sdk.game.happyTime(); } catch (e) {}
+      }
+    },
+
+    /**
+     * Midgame ad at a NATURAL break (we call it before the deduction board).
+     * Returns a Promise that always resolves — the game continues whether
+     * the ad played, errored, was blocked, or the SDK is absent.
+     */
+    midgameAd: function () {
+      var sdk = getSDK();
+      return new Promise(function (resolve) {
+        if (!sdk || !sdk.ad || !sdk.ad.requestAd) { resolve(); return; }
+        var done = false;
+        function finish() { if (!done) { done = true; resolve(); } }
+        try {
+          sdk.ad.requestAd("midgame", {
+            adStarted: function () {},
+            adFinished: finish,
+            adError: finish
+          });
+          // Safety net: never hang the game on an ad callback.
+          setTimeout(finish, 15000);
+        } catch (e) { finish(); }
+      });
+    },
+
+    /**
+     * Rewarded ad, ALWAYS user-initiated (the "watch ad for a hint" button).
+     * cb(true)  -> adFinished: grant the reward.
+     * cb(false) -> adError / no SDK: NEVER grant; caller shows a message.
+     */
+    rewardedAd: function (cb) {
+      var sdk = getSDK();
+      if (!sdk || !sdk.ad || !sdk.ad.requestAd) { cb(false); return; }
+      var settled = false;
+      function no(e)  { if (!settled) { settled = true; cb(false); } }
+      function yes()  { if (!settled) { settled = true; cb(true); } }
+      try {
+        sdk.ad.requestAd("rewarded", {
+          adStarted: function () {},
+          adFinished: yes,
+          adError: no
+        });
+        setTimeout(no, 15000);
+      } catch (e) { no(e); }
+    }
+  };
+
+  root.Platform = Platform;
+})(typeof window !== "undefined" ? window : this);
+
+/* =========================================================================
+ * audio.js — generated sound: SFX + a composed music-box BGM loop + per-scene
+ * ambient variation. Everything is synthesized with Web Audio; zero audio
+ * files. Respects the mute toggle, initializes on first user gesture
+ * (browser autoplay policy). All failures are silent by design.
+ * ========================================================================= */
+(function (root) {
+  "use strict";
+
+  var ctx = null;
+  var noiseBuf = null;
+  var moodNodes = null;   // per-scene ambient
+  var musicTimer = null;   // noir chord loop
+  var muted = false;
+  try { muted = root.localStorage && root.localStorage.getItem("bk_muted") === "1"; } catch (e) {}
+
+  function ensure() {
+    if (!ctx) {
+      try {
+        var AC = root.AudioContext || root.webkitAudioContext;
+        if (AC) ctx = new AC();
+      } catch (e) { ctx = null; }
+    }
+    if (ctx && ctx.state === "suspended") { ctx.resume(); }
+    return ctx;
+  }
+
+  function getNoiseBuf(c) {
+    if (noiseBuf) return noiseBuf;
+    try {
+      var len = c.sampleRate * 2;
+      var buf = c.createBuffer(1, len, c.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      noiseBuf = buf;
+    } catch (e) { noiseBuf = null; }
+    return noiseBuf;
+  }
+
+  function tone(freq, dur, type, vol, when) {
+    if (muted) return;
+    var c = ensure();
+    if (!c) return;
+    try {
+      var t = c.currentTime + (when || 0);
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.type = type || "sine";
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(c.destination);
+      o.start(t); o.stop(t + dur + 0.05);
+    } catch (e) {}
+  }
+
+  /* ---- composed BGM loop: "Stormlight Waltz" — ONE continuous
+     composed 41.6-second loop (64 eighth-note steps x 0.65s), gentle
+     plucked melody in a warm desert-breeze flavour + soft bass
+     and a soft hand-percussion tick on the bass steps, WebAudio
+     lookahead scheduling. Plays across the WHOLE game (not per-scene
+     beeps). Mute stops it; unmute resumes it. SFX stay separate. ---- */
+  var BGM_STEP = 0.56;
+  var BGM_LOOP_SECONDS = 35.84;
+  var BGM_MELODY = [
+    72,0,76,79,0,76,77,0, 74,76,0,0,74,0,71,74,
+    0,79,81,0,79,76,0,74, 72,0,69,72,0,76,0,0,
+    74,0,77,81,0,77,76,0, 74,71,0,69,67,0,69,71,
+    72,0,0,0,69,0,71,0, 72,0,0,0,0,0,0,0
+  ];
+  var BGM_BASS = { 0: 48, 8: 45, 16: 50, 24: 47, 32: 48, 40: 45, 48: 50, 56: 47 };
+  var bgmPlaying = false;
+  var bgmStep = 0;
+  var bgmNextTime = 0;
+  var bgmTimer = null;
+
+  function midiHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+  function pluck(midi, t) {
+    try {
+      var o = ctx.createOscillator();
+      var o2 = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(midiHz(midi), t);
+      o2.type = "triangle"; o2.frequency.setValueAtTime(midiHz(midi) * 2, t);
+      var g2 = ctx.createGain(); g2.gain.setValueAtTime(0.25, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.11, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+      o.connect(g); o2.connect(g2); g2.connect(g); g.connect(ctx.destination);
+      o.start(t); o2.start(t); o.stop(t + 1.4); o2.stop(t + 1.4);
+    } catch (e) {}
+  }
+  function bassNote(midi, t) {
+    try {
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(midiHz(midi), t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.055, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 3.0);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + 3.1);
+    } catch (e) {}
+  }
+  function bgmSchedule() {
+    if (!ctx) return;
+    while (bgmNextTime < ctx.currentTime + 0.7) {
+      var step = bgmStep % 64;
+      var m = BGM_MELODY[step];
+      if (m && !muted) pluck(m, bgmNextTime);
+      if (BGM_BASS[step] !== undefined && !muted) bassNote(BGM_BASS[step], bgmNextTime);
+      bgmNextTime += BGM_STEP;
+      bgmStep++;
+    }
+  }
+  function startMusic() {
+    if (muted || bgmTimer) return;
+    var c = ensure();
+    if (!c) return;
+    bgmPlaying = true;
+    bgmStep = 0;
+    bgmNextTime = c.currentTime + 0.1;
+    bgmSchedule();
+    bgmTimer = setInterval(bgmSchedule, 200);
+  }
+  function stopMusic() {
+    if (bgmTimer) { clearInterval(bgmTimer); bgmTimer = null; }
+    bgmPlaying = false;
+  }
+
+  /* ---- per-scene ambient moods (all generated, all quiet) ---- */
+  var MOODS = {
+    title:   { hum: [[55, 0.010]] },
+    digtent:  { noise: { type: "lowpass", freq: 500, gain: 0.016 }, lfo: { rate: 0.10, depth: 0.008 } },
+    workroom: { noise: { type: "lowpass", freq: 420, gain: 0.014 }, lfo: { rate: 0.07, depth: 0.008 } },
+    workshop: { hum: [[60, 0.007]], noise: { type: "bandpass", freq: 900, q: 0.6, gain: 0.005 }, lfo: { rate: 0.30, depth: 0.003 } },
+    archive:  { hum: [[58, 0.008], [116, 0.004]] },
+    map:     { hum: [[55, 0.010]] },
+    deduction: { hum: [[55, 0.010]] },
+    results: { hum: [[55, 0.008]] }
+  };
+
+  function setMood(name) {
+    stopMood();
+    if (muted) return;
+    var c = ensure();
+    if (!c) return;
+    var mood = MOODS[name] || MOODS.title;
+    try {
+      var nodes = { oscs: [], gains: [], lfo: null };
+      (mood.hum || []).forEach(function (h) {
+        var o = c.createOscillator();
+        var g = c.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(h[0], c.currentTime);
+        g.gain.setValueAtTime(0.0001, c.currentTime);
+        g.gain.exponentialRampToValueAtTime(h[1], c.currentTime + 2.0);
+        o.connect(g); g.connect(c.destination);
+        o.start();
+        nodes.oscs.push(o); nodes.gains.push(g);
+      });
+      if (mood.noise) {
+        var nb = getNoiseBuf(c);
+        if (nb) {
+          var src = c.createBufferSource();
+          src.buffer = nb; src.loop = true;
+          var f = c.createBiquadFilter();
+          f.type = mood.noise.type;
+          f.frequency.setValueAtTime(mood.noise.freq, c.currentTime);
+          if (mood.noise.q) f.Q.setValueAtTime(mood.noise.q, c.currentTime);
+          var ng = c.createGain();
+          ng.gain.setValueAtTime(0.0001, c.currentTime);
+          ng.gain.exponentialRampToValueAtTime(mood.noise.gain, c.currentTime + 2.5);
+          src.connect(f); f.connect(ng); ng.connect(c.destination);
+          src.start();
+          nodes.oscs.push(src); nodes.gains.push(ng);
+          if (mood.lfo) {
+            var lfo = c.createOscillator();
+            var lg = c.createGain();
+            lfo.type = "sine";
+            lfo.frequency.setValueAtTime(mood.lfo.rate, c.currentTime);
+            lg.gain.setValueAtTime(mood.lfo.depth, c.currentTime);
+            lfo.connect(lg); lg.connect(ng.gain);
+            lfo.start();
+            nodes.lfo = lfo;
+          }
+        }
+      }
+      moodNodes = nodes;
+    } catch (e) {}
+  }
+
+  function stopMood() {
+    if (!moodNodes) return;
+    var nodes = moodNodes;
+    moodNodes = null;
+    try {
+      var t = ctx ? ctx.currentTime : 0;
+      nodes.gains.forEach(function (g) {
+        try { g.gain.linearRampToValueAtTime(0.0001, t + 0.5); } catch (e) {}
+      });
+      setTimeout(function () {
+        nodes.oscs.forEach(function (o) { try { o.stop(); } catch (e) {} });
+        if (nodes.lfo) { try { nodes.lfo.stop(); } catch (e) {} }
+      }, 650);
+    } catch (e) {}
+  }
+
+  var AudioFX = {
+    get muted() { return muted; },
+    bgmInfo: function () { return { playing: bgmPlaying, muted: muted, loopSeconds: BGM_LOOP_SECONDS }; },
+
+    toggleMute: function () {
+      muted = !muted;
+      try { if (root.localStorage) root.localStorage.setItem("bk_muted", muted ? "1" : "0"); } catch (e) {}
+      if (muted) { stopMood(); stopMusic(); }
+      return muted;
+    },
+
+    unlock: function () { ensure(); },           // call on first tap/click
+    click: function () { tone(620, 0.06, "triangle", 0.10); },
+    clue:  function () {                          // little "discovery" chime
+      tone(523.25, 0.12, "sine", 0.14);
+      tone(783.99, 0.18, "sine", 0.12, 0.10);
+    },
+    paper: function () { tone(220, 0.08, "sawtooth", 0.05); tone(330, 0.06, "sawtooth", 0.04, 0.05); },
+    snap:  function () {                           // evidence locks into place
+      tone(880, 0.07, "triangle", 0.12);
+      tone(1174.66, 0.12, "triangle", 0.10, 0.06);
+    },
+    wrong: function () { tone(196, 0.16, "sine", 0.10); tone(155.56, 0.2, "sine", 0.09, 0.08); },
+    success: function () {                       // case solved
+      tone(392, 0.15, "sine", 0.14);
+      tone(523.25, 0.15, "sine", 0.14, 0.12);
+      tone(659.25, 0.25, "sine", 0.14, 0.24);
+      tone(783.99, 0.35, "sine", 0.12, 0.36);
+    },
+
+    /** composed BGM loop + per-scene mood; safe to leave running, mute stops it */
+    startAmbient: function () {
+      startMusic();
+      setMood("title");
+    },
+    setMood: setMood,
+    stopAmbient: function () {
+      stopMood();
+      stopMusic();
+    }
+  };
+
+  root.AudioFX = AudioFX;
+})(typeof window !== "undefined" ? window : this);
+
+/*__DATA_BEGIN__*/
+/* =========================================================================
+ * data.js — ALL story content for Case #10: Ball Lightning
+ * Ball lightning is a glowing sphere reported for centuries during
+ * thunderstorms: grapefruit-sized balls of light that drift through the
+ * air, sometimes pass near windows, hum softly, smell of ozone, and
+ * vanish with a pop. The leading modern explanation (the Abrahamson &
+ * Dinniss theory, with laboratory recreations) is that lightning striking
+ * soil vaporises silicon and minerals; the hot vapour forms a glowing
+ * ball that drifts while it slowly burns and cools. Other honest
+ * historical ideas: a floating ball of pure storm electricity or plasma,
+ * and an optical afterimage on the witness's eye.
+ * Family-friendly and educational.
+ * Portal build: 4 scenes, 8 clues, 3 NPCs, drag-deduction with 3 decoy
+ * chips, ONE timed set piece (Guide the Glowing Sphere!) and ONE twist
+ * clue pair (the Windowpane Sphere, corrected by the Lab Film & Singed
+ * Fibres). Internal clue/scene/npc ids reuse the proven engine keys.
+ * ========================================================================= */
+(function (root) {
+  "use strict";
+  var CLUES = {
+    jar: {
+      name: "The Glowing Sphere Over the Green", icon: "🔮", scene: "digtent",
+      desc: "Minutes after the thunderstorm rolled away, a glowing ball about the size of a grapefruit drifted slowly over the village green, roughly two metres above the grass. Witnesses say it hummed softly, smelled faintly of ozone — that sharp, clean smell after lightning — and then vanished with a small pop, like a soap bubble bursting. No wire held it up. No machine sat nearby. A ball of light simply floated across the green, calm as you please.",
+      flavor: "A grapefruit-sized glowing sphere drifted over the green, hummed, and popped."
+    },
+    cylinder: {
+      name: "The Windowpane Sphere", icon: "🪟", scene: "digtent", requires: "jar",
+      descPre: "Rose Delgado watched a second, smaller sphere drift slowly past her cottage window, on the other side of the glass. The first careful reading in this case was that the windowpane sphere proved the afterimage idea: a ball of light seen through glass that left no mark on the pane, no scorch, no smudge, must surely have been in the eye of the watcher, not in the air — a bright flash leaving a glowing spot floating on the eye itself. It is a tidy idea, and for a while it was the trusted one in this case.",
+      desc: "Rose Delgado watched a second, smaller sphere drift slowly past her cottage window — but the lab film and the microscope tell a different story. In the glass there is a tiny melted pinhole, small as a pinprick, right where the sphere paused, and the curtain behind it carries real singed fibres, curled and browned by heat. An afterimage in an eye cannot melt glass or singe a curtain. The sphere was real, and it was physical — a ball of hot, glowing material drifting past the window.",
+      flavorPre: "First reading: a sphere through glass that left no mark — just an afterimage.",
+      flavor: "Corrected: a melted pinhole and singed fibres prove the sphere was real.",
+      twistOrig: "First (wrong) reading: 'the windowpane sphere left no mark, so it must have been an afterimage in the eye.'"
+    },
+    rod: {
+      name: "The Singed Grass Ring", icon: "⭕", scene: "workroom",
+      desc: "On the green, where the drifting sphere dipped low and brushed the ground, the grass carries a neat ring of singed, browned blades, each tip curled by heat. The soil inside the ring is ordinary village soil — and that matters, because soil like this is rich in silicon and minerals, the very ingredients a lightning strike can vaporise. Detectives who favour the afterimage idea point out, fairly, that an ordinary lightning strike nearby could have scorched a ring like this all by itself. The ring is real evidence either way: something very hot touched this grass.",
+      flavor: "A neat ring of singed grass where the sphere brushed the ground."
+    },
+    stopper: {
+      name: "The Thunderstorm Logbook", icon: "📓", scene: "workroom", requires: "rod",
+      desc: "The weather station logbook is a treasure of careful handwriting: the storm arrived at half past six, lightning struck near the green three times in ten minutes, and the sphere was first reported two minutes after the closest strike. If a ball of pure storm electricity could float free, this storm certainly had electricity to spare. Keepers of this logbook held that view honestly for years — until the laboratory results asked a harder question: can pure electricity melt a pinhole in glass?",
+      flavor: "Logbook: three lightning strikes near the green, then the sphere appeared."
+    },
+    testnotes: {
+      name: "The Lab Recreation Data", icon: "🧪", scene: "workroom",
+      desc: "The laboratory printouts tell a remarkable story. Following the Abrahamson and Dinniss theory, scientists vaporised samples of soil with a powerful electric arc — a laboratory lightning strike — and the hot silicon vapour rolled itself into small glowing balls that drifted, hummed faintly, and faded with a pop, just like the reports. You proved the handling yourself in the Guide the Glowing Sphere challenge: a real glowing ball is a physical thing that drifts and must be guided, not a spot on anyone's eye.",
+      flavor: "Lab data: vaporised soil forms glowing balls that drift, hum, and pop."
+    },
+    figurine: {
+      name: "The Photographer's Empty Frames", icon: "🎞️", scene: "workshop", requires: "testnotes",
+      desc: "Theo Bennett aimed his camera at the sphere six times from the lookout — and every frame came out empty, showing only the green, the ridge, and the evening sky. Supporters of the afterimage idea treasure these frames: if a real ball of light had floated there, surely the camera would have caught it. Theo himself is more careful: the sphere moved slowly but glowed and flickered, his exposures were set for a dark storm sky, and a small, shifting glow can slip between frames. Empty frames are a puzzle, detective — but an empty photograph is not the same as an empty sky.",
+      flavor: "Six camera frames of the sphere — every one came out empty."
+    },
+    recipe: {
+      name: "The Humming Power Lines", icon: "⚡", scene: "workshop",
+      desc: "During any strong storm, the power lines along Lightning Ridge hum and crackle, and the air around them carries that same sharp ozone smell the witnesses described. It is easy to see why the pure-electricity idea stayed popular for so long: on a storm night the whole ridge feels charged, and a floating ball of storm electricity sounds like exactly the sort of thing such a night could make. The hum is real, and the charge in the air is real. The question is whether loose electricity alone can form a tidy, drifting ball that melts glass.",
+      flavor: "Power lines hum and crackle in storms — the air itself feels charged."
+    },
+    xray: {
+      name: "The Lab Film & Singed Fibres", icon: "🎬", scene: "archive", requires: "recipe",
+      desc: "The archive holds the weather station's own film of the sphere drifting past the cottage window, frame by steady frame — no flicker of an eye, no trick of a lens, just a glowing ball moving slowly through real air. Under the microscope, the evidence becomes certain: the windowpane carries a tiny melted pinhole where the sphere paused, and the curtain fibres behind it are genuinely singed, curled by real heat. Film, glass, and fibres all agree: the sphere was a physical, glowing, hot object.",
+      flavor: "Lab film plus a melted pinhole and singed fibres: the sphere was real."
+    }
+  };
+  var SCENES = {
+    digtent: {
+      name: "The Village Green After the Storm", sub: "Village green · just after the thunderstorm",
+      blurb: "Puddles shine on the paths, the grass is washed clean and bright, and half the village is still talking about the ball of light that drifted overhead. Rose Delgado, who kept the lighthouse for thirty years, watched it from her cottage — and one glowing puzzle is already waiting.",
+      hotspots: [
+        { id: "hs-jar", clue: "jar", x: 30, y: 58, label: "The glowing sphere over the green" },
+        { id: "hs-cylinder", clue: "cylinder", x: 66, y: 50, label: "The cottage window", requires: "jar" }
+      ],
+      npcs: ["konig"],
+      art:
+      '<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs><linearGradient id="dt-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3a5e"/><stop offset="1" stop-color="#7a6aa8"/></linearGradient>' +
+      '<linearGradient id="dt-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a7a4e"/><stop offset="1" stop-color="#2c5230"/></linearGradient>' +
+      '<radialGradient id="dt-glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff6c8"/><stop offset="0.55" stop-color="#ffd166"/><stop offset="1" stop-color="#ffd166" stop-opacity="0"/></radialGradient></defs>' +
+      '<rect width="800" height="270" fill="url(#dt-sky)"/>' +
+      '<circle cx="90" cy="52" r="22" fill="#e8e4d2" opacity="0.85"/>' +
+      '<g fill="#1e2a44"><path d="M40 270 L40 190 L110 150 L180 190 L180 270 Z"/><path d="M600 270 L600 180 L680 140 L760 180 L760 270 Z"/></g>' +
+      '<g fill="#ffd166"><rect x="86" y="205" width="22" height="28"/><rect x="652" y="196" width="22" height="28"/></g>' +
+      '<rect y="262" width="800" height="238" fill="url(#dt-grass)"/>' +
+      '<ellipse cx="400" cy="330" r="120" fill="url(#dt-glow)" opacity="0.9"/>' +
+      '<circle cx="400" cy="322" r="34" fill="#ffeeb0" stroke="#ffd166" stroke-width="3"/>' +
+      '<g stroke="#8fb996" stroke-width="2" fill="none"><path d="M0 420 L800 405 M60 465 L740 455"/></g>' +
+      '<ellipse cx="210" cy="440" rx="70" ry="10" fill="#9fc4de" opacity="0.55"/>' +
+      '<ellipse cx="610" cy="452" rx="56" ry="8" fill="#9fc4de" opacity="0.5"/>' +
+      '</svg>'
+    },
+    workroom: {
+      name: "The Weather Station Lab", sub: "Weather station · instruments and samples",
+      blurb: "Barometers, sample jars of village soil, and a logbook fat with storm notes. Dr. Priya Nair works here — and this is where you will Guide the Glowing Sphere yourself.",
+      hotspots: [
+        { id: "hs-rod", clue: "rod", x: 26, y: 56, label: "The singed grass sample" },
+        { id: "hs-stopper", clue: "stopper", x: 52, y: 48, label: "The thunderstorm logbook", requires: "rod" },
+        { id: "hs-testnotes", clue: "testnotes", x: 76, y: 56, label: "The lab recreation bench", requires: "rod" }
+      ],
+      npcs: ["layla"],
+      art:
+      '<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs><linearGradient id="wr-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a4a63"/><stop offset="1" stop-color="#22304a"/></linearGradient></defs>' +
+      '<rect width="800" height="500" fill="url(#wr-wall)"/>' +
+      '<g><rect x="52" y="46" width="200" height="140" rx="6" fill="#2a3a56" stroke="#8fd4ff" stroke-width="3"/>' +
+      '<path d="M66 150 L120 110 L170 128 L238 74" stroke="#7ce38b" stroke-width="4" fill="none"/></g>' +
+      '<g><rect x="540" y="50" width="190" height="140" rx="6" fill="#2a3a56" stroke="#8fd4ff" stroke-width="3"/>' +
+      '<circle cx="635" cy="120" r="42" fill="none" stroke="#ffd166" stroke-width="4"/><path d="M635 120 L662 96" stroke="#ffd166" stroke-width="4"/></g>' +
+      '<g><rect x="60" y="290" width="680" height="26" rx="6" fill="#5a4630"/><rect x="80" y="316" width="16" height="90" fill="#3e2f1e"/><rect x="700" y="316" width="16" height="90" fill="#3e2f1e"/></g>' +
+      '<g><ellipse cx="200" cy="272" rx="52" ry="16" fill="#6a5138" stroke="#3e2f1e" stroke-width="3"/><circle cx="200" cy="264" r="18" fill="none" stroke="#c97e3e" stroke-width="5"/>' +
+      '<rect x="360" y="228" width="96" height="58" rx="4" fill="#ece2c4" stroke="#8a7a4e" stroke-width="3"/>' +
+      '<rect x="540" y="238" width="130" height="48" rx="8" fill="#1c2a3a" stroke="#ffd166" stroke-width="3"/></g>' +
+      '<g fill="#ffd166"><circle cx="568" cy="262" r="6"/><circle cx="600" cy="262" r="6"/><circle cx="632" cy="262" r="6"/></g>' +
+      '<rect y="440" width="800" height="60" fill="#141e2e"/>' +
+      '</svg>'
+    },
+    workshop: {
+      name: "Lightning Ridge & the Lookout", sub: "High ridge · storm lookout and power lines",
+      blurb: "A grassy ridge above the village with a wooden lookout, humming power lines, and the finest storm view in the county. Theo Bennett photographs storms from here — and he aimed his camera at the sphere.",
+      locked: true,
+      hotspots: [
+        { id: "hs-figurine", clue: "figurine", x: 32, y: 55, label: "The photographer's camera", requires: "testnotes" },
+        { id: "hs-recipe", clue: "recipe", x: 66, y: 48, label: "The humming power lines" }
+      ],
+      npcs: ["samir"],
+      art:
+      '<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs><linearGradient id="ws-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a4470"/><stop offset="1" stop-color="#8a6aa8"/></linearGradient>' +
+      '<linearGradient id="ws-hill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3e6a44"/><stop offset="1" stop-color="#24402a"/></linearGradient></defs>' +
+      '<rect width="800" height="500" fill="url(#ws-sky)"/>' +
+      '<path d="M0 330 L220 250 L480 320 L800 260 L800 500 L0 500 Z" fill="url(#ws-hill)"/>' +
+      '<g stroke="#141a28" stroke-width="5" fill="none"><path d="M60 120 Q400 190 740 110"/><path d="M60 150 Q400 218 740 140"/></g>' +
+      '<g fill="#141a28"><rect x="52" y="96" width="14" height="150"/><rect x="726" y="86" width="14" height="150"/></g>' +
+      '<g><rect x="330" y="196" width="18" height="110" fill="#5a4630"/><rect x="452" y="196" width="18" height="110" fill="#5a4630"/><rect x="312" y="176" width="176" height="24" rx="4" fill="#6a5138"/><path d="M306 176 L400 138 L494 176 Z" fill="#4a3822"/></g>' +
+      '<g><rect x="150" y="330" width="52" height="34" rx="6" fill="#1c2438" stroke="#8fd4ff" stroke-width="3"/><circle cx="176" cy="347" r="10" fill="#8fd4ff"/></g>' +
+      '<circle cx="690" cy="56" r="24" fill="#e8e4d2" opacity="0.8"/>' +
+      '<rect y="452" width="800" height="48" fill="#1a2c1e"/>' +
+      '</svg>'
+    },
+    archive: {
+      name: "The Storm Archive & Film Room", sub: "Archive · old films and fibres",
+      blurb: "Shelves of labelled storm films, a humming projector, and a microscope bench by the window samples. The quietest room at the station — and the room where trusted ideas get checked.",
+      locked: true,
+      hotspots: [
+        { id: "hs-xray", clue: "xray", x: 55, y: 52, label: "The lab film projector", requires: "recipe" }
+      ],
+      npcs: [],
+      art:
+      '<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs><linearGradient id="ax-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#31404e"/><stop offset="1" stop-color="#1a232c"/></linearGradient></defs>' +
+      '<rect width="800" height="500" fill="url(#ax-wall)"/>' +
+      '<g><rect x="46" y="56" width="250" height="210" rx="6" fill="#3e4c3a" stroke="#222c20" stroke-width="3"/>' +
+      '<g><rect x="64" y="76" width="46" height="64" rx="3" fill="#ece2c4"/><rect x="118" y="76" width="46" height="64" rx="3" fill="#bfe3f2"/><rect x="172" y="76" width="46" height="64" rx="3" fill="#ece2c4"/><rect x="226" y="76" width="46" height="64" rx="3" fill="#bfe3f2"/></g>' +
+      '<g fill="#2a3626"><rect x="64" y="160" width="208" height="10"/><rect x="64" y="196" width="208" height="10"/></g></g>' +
+      '<g><rect x="430" y="84" width="290" height="210" rx="8" fill="#f2ecd8" stroke="#8a7a4e" stroke-width="3"/>' +
+      '<circle cx="575" cy="180" r="30" fill="#ffeeb0" stroke="#ffd166" stroke-width="3"/>' +
+      '<path d="M430 260 L545 196 L520 280 Z" fill="#cfeaff" opacity="0.35"/></g>' +
+      '<g><rect x="330" y="120" width="70" height="52" rx="8" fill="#1c2438" stroke="#ffd166" stroke-width="3"/><circle cx="352" cy="138" r="12" fill="none" stroke="#ffd166" stroke-width="3"/><circle cx="378" cy="138" r="12" fill="none" stroke="#ffd166" stroke-width="3"/></g>' +
+      '<g><rect x="150" y="320" width="500" height="18" rx="6" fill="#4a3a26"/></g>' +
+      '<rect y="440" width="800" height="60" fill="#0f1418"/>' +
+      '</svg>'
+    }
+  };
+  var SCENE_ORDER = ["digtent", "workroom", "workshop", "archive"];
+  var NPCS = {
+    konig: {
+      name: "Rose Delgado", scene: "digtent", role: "Retired lighthouse keeper, eyewitness",
+      intro: "A steady-eyed woman in a yellow raincoat folds her arms and looks across the wet green. \u2018Rose Delgado. I kept the lighthouse lamp for thirty years, detective, and I know a real light when I see one. What drifted over this green was real. Ask away.\u2019",
+      topics: [
+        {
+          q: "What did you see on the green?",
+          a: "A ball of light, detective — about the size of a grapefruit, glowing gold and white, drifting slow as a lantern carried on the air. It hummed, soft and steady, and the air smelled sharp, like the moment after a lightning strike. Then, pop — gone, all at once, the way a bubble goes. I have watched storms come in off the sea for thirty years. I never saw anything like it before, and I have never forgotten it since.",
+          note: "Rose saw a grapefruit-sized glowing sphere drift, hum, and vanish with a pop."
+        },
+        {
+          q: "Tell me about the sphere at your window.",
+          requires: "jar",
+          a: "A smaller one, detective, drifting past my cottage window slow enough to follow with a finger. For a breath it paused, right against the glass, and I thought: well, it has left nothing behind, so perhaps it was only a spot on my own eyes after all the lightning flashes. That is what I told the station, and I said it honestly. But keep an open mind — eyes can be fooled, and so can first readings. Let the laboratory check the glass before you decide.",
+          note: "Rose's window sphere paused at the glass — her first reading was an afterimage."
+        },
+        {
+          q: "Where is the best place to watch storms?",
+          requires: "jar",
+          a: "Lightning Ridge, detective, with the wooden lookout on top — the whole county's storms parade past it, and the power lines up there sing in the wind. Our storm photographer, Theo Bennett, practically lives up there in storm season. Take the ridge path and look back at the village: you can read the green, the cottages, and the weather station like a map. Tell the view Rose Delgado sent a detective who checks the high ground herself.",
+          unlockScene: "workshop",
+          note: "Lightning Ridge and its lookout give the best storm view in the county."
+        }
+      ]
+    },
+    layla: {
+      name: "Dr. Priya Nair", scene: "workroom", role: "Weather-station scientist",
+      intro: "A scientist in a white coat looks up from a tray of soil samples and smiles. \u2018Dr. Priya Nair, weather station. Ball lightning has been reported for centuries, detective, and for most of that time science had no tidy answer. Now we are getting closer. Ask away.\u2019",
+      topics: [
+        {
+          q: "What is ball lightning?",
+          a: "It is the name for glowing spheres seen during thunderstorms, detective — usually about the size of a grapefruit, drifting for a few seconds, sometimes humming, often smelling of ozone, and vanishing with a pop or a quiet fade. Sailors, farmers, lighthouse keepers, and pilots have reported them for centuries, in country after country. When that many careful witnesses describe the same unlikely thing, a good scientist listens first and explains second.",
+          note: "Ball lightning: glowing spheres in storms, reported for centuries worldwide."
+        },
+        {
+          q: "What does the singed ring tell us?",
+          requires: "rod",
+          a: "That something genuinely hot touched the grass, detective — an afterimage on an eye cannot scorch a single blade. And look at the soil inside your ring: it is rich in silicon and minerals. Hold that thought beside the Abrahamson and Dinniss theory, which says a lightning strike can vaporise exactly those ingredients. A fair warning, though: a nearby ordinary strike could scorch grass too, which is why we test ideas in the laboratory instead of merely liking them.",
+          note: "The singed ring proves real heat; the soil there is rich in silicon."
+        },
+        {
+          q: "Where are the old storm films kept?",
+          requires: "rod",
+          a: "In the Storm Archive, detective — our film room at the back of the station. Reels of storm footage, microscope slides of fibres and glass, temperature charts, all catalogued and waiting. When you are ready to test a trusted idea, that room holds the recordings that settle arguments. Tell the projector Dr Nair sent you — and mind you watch the window film all the way through.",
+          unlockScene: "archive",
+          note: "The Storm Archive holds the station film and the microscope samples."
+        }
+      ]
+    },
+    samir: {
+      name: "Theo Bennett", scene: "workshop", role: "Storm photographer",
+      intro: "A photographer with a camera slung round his neck grins like a man who chases thunder for fun. \u2018Theo Bennett. I photograph storms from this ridge all season. You want to know about the night the sky sent us a lantern? Pull up a fence post, detective.\u2019",
+      topics: [
+        {
+          q: "What do you photograph up here?",
+          a: "Storms, detective — the bigger the better. Lightning over the ridge, rain curtains crossing the valley, the power lines humming with charge in the air. I set my exposures for a dark sky and a bright flash, which works beautifully for lightning. A small, soft, drifting glow, though? That is a very different subject, and cameras are honest about what they are set to catch — and what they are set to miss.",
+          note: "Theo sets his camera exposures for dark skies and bright lightning flashes."
+        },
+        {
+          q: "Why did your frames come out empty?",
+          requires: "figurine",
+          a: "Six frames, detective, and not a whisker of the sphere on any of them — I checked until my eyes ached. Folks who favour the afterimage idea wave those frames like a flag, and I understand why. But between one frame and the next there are gaps, my shutter was set for lightning, and the sphere glowed soft and flickering, not bright and steady. An empty frame proves my camera missed it. It does not prove the sphere was never there. Check the station's own film in the archive and compare.",
+          note: "Theo's empty frames show his camera missed the sphere — not that it was absent."
+        },
+        {
+          q: "What should a detective remember?",
+          a: "That the sky keeps its secrets politely, detective. The answer was never a spot on somebody's eye or a loose spark wandering off a wire — it was lightning, soil, and hot glowing vapour, drifting together quietly while the whole village watched. Whatever your board decides, decide it kindly, and give the patient witnesses their credit. They reported a wonder honestly, one storm at a time."
+        }
+      ]
+    }
+  };
+  var THEORIES = [
+    {
+      id: "galvanic",
+      title: "Glowing vapor from lightning-struck soil",
+      correct: true,
+      desc: "The theory this game marks correct — the Abrahamson and Dinniss theory, supported by laboratory recreations: lightning striking soil vaporises silicon and minerals, and the hot vapour forms a glowing ball that drifts while it slowly burns and cools. It explains the hum, the ozone smell, the melted pinhole in the window glass, and the singed curtain fibres. Ball lightning, on this reading, is a small, floating piece of a lightning strike itself.",
+      supports: ["cylinder", "testnotes", "xray"]
+    },
+    {
+      id: "storage",
+      title: "A floating ball of pure storm electricity",
+      desc: "The favourite explanation for generations, and an honestly held one: a thunderstorm fills the air with charge, the power lines hum with it, and the logbook shows strike after strike near the green, so perhaps a ball of pure storm electricity or plasma simply floated free and drifted. Many careful people held this view — it explains a charged storm night well, even if it cannot explain how loose electricity would melt a tidy pinhole in glass or singe a curtain.",
+      supports: ["jar", "stopper", "recipe"]
+    },
+    {
+      id: "ritual",
+      title: "An afterimage — a trick of the eye",
+      desc: "The gentle eye guess: bright lightning flashes can leave a glowing spot floating on the eye itself, so perhaps witnesses honestly saw a ball that was never in the air at all. It was honestly proposed, and it fits a sphere that seems to leave no mark and slips past a camera — but an afterimage cannot scorch grass, and the singed ring and the empty frames were the stage, while the lab film and the microscope keep pointing at a real, hot, physical ball.",
+      supports: ["rod", "figurine"]
+    }
+  ];
+  var TWIST = { clue: "cylinder", triggerClue: "xray", fromTheory: "ritual", toTheory: "galvanic" };
+  var DECOYS = [
+    { name: "A lost lantern floating home", icon: "🏮" },
+    { name: "A firefly wearing a lampshade", icon: "🪲" },
+    { name: "The Moon rolled off its shelf", icon: "🌙" }
+  ];
+  var INTRO = [
+    {
+      kicker: "A village green, just after a thunderstorm",
+      title: "A ball of light, floating",
+      text: "For centuries, people caught in thunderstorms have reported the same wonder: ball lightning — a glowing sphere about the size of a grapefruit, drifting slowly through the air, humming softly, smelling of ozone, and vanishing with a pop. Last night, one drifted over this village green."
+    },
+    {
+      kicker: "The puzzle",
+      title: "Real, or a trick of the eye?",
+      text: "One sphere crossed the open green in front of a dozen witnesses. Another drifted past a cottage window and seemed to leave no mark at all. Honest experts have proposed a floating ball of pure storm electricity — and even a glowing afterimage left on the eye by the lightning flashes. Every idea has something to say."
+    },
+    {
+      kicker: "Your assignment",
+      title: "Detective, the case is yours",
+      text: "Visit four locations, question three witnesses, and gather at least 6 of the 8 clues. Try the Guide the Glowing Sphere challenge, watch for the unexpected — then face the deduction board, match every piece of evidence to its theory, and close the case, if you can."
+    }
+  ];
+  var DATA = {
+    CLUES: CLUES, SCENES: SCENES, SCENE_ORDER: SCENE_ORDER, NPCS: NPCS,
+    THEORIES: THEORIES, DECOYS: DECOYS, INTRO: INTRO, TWIST: TWIST,
+    CLUES_TO_UNLOCK_DEDUCTION: 6,
+    RANKS: [
+      { min: 2100, title: "Chief Inspector" },
+      { min: 1650, title: "Detective Sergeant" },
+      { min: 1050, title: "Constable" },
+      { min: 0, title: "Rookie" }
+    ]
+  };
+  if (typeof module !== "undefined" && module.exports) { module.exports = DATA; }
+  else { root.BK_DATA = DATA; }
+})(typeof window !== "undefined" ? window : this);
+/*__DATA_END__*/
+
+/*__ART_BEGIN__*/
+window.BK_PORTAL_ART = {"scenes":{},"npcs":{},"title":null};
+/*__ART_END__*/
+
+/* =========================================================================
+ * game.js — "Beast Kid: Case Files — Case #10: Ball Lightning"
+ * Point-and-click detective game. Vanilla JS, no dependencies.
+ *
+ * Scoring (portal rebalance — NO speed bonus; thoroughness wins):
+ *   clue found ......... +100
+ *   insight noted ...... +50
+ *   topic asked ........ +25
+ *   evidence matched ... +150
+ *   hint ............... -50
+ * Ranks: score thresholds in data RANKS. Stars: 1-3 on thoroughness +
+ * deduction accuracy, persisted as best in localStorage.
+ * ========================================================================= */
+(function () {
+  "use strict";
+
+  var D = window.BK_DATA;
+  var PORTAL_ART = window.BK_PORTAL_ART || { scenes: {}, npcs: {}, title: null };
+  var $ = function (s) { return document.querySelector(s); };
+
+  var CLUE_PTS = 100, INSIGHT_PTS = 50, TOPIC_PTS = 25, MATCH_PTS = 150, HINT_COST = 50;
+
+  /* ------------------------------ state -------------------------------- */
+  function freshState() {
+    return {
+      clues: {},          // clueId -> true
+      notes: [],          // {text}
+      asked: {},          // "npc:index" -> true (dialogue asked once)
+      placed: {},         // clueId -> theoryId (deduction board matches)
+      wrongDrops: 0,      // wrong drag attempts on the board
+      scenes: ["digtent", "workroom"],
+      twistFired: false,
+      setPiece: { done: false, caught: 0, bonus: 0, attempts: 0 },
+      screen: "title",
+      scene: null,
+      score: 0,
+      hints: 0,
+      elapsed: 0,         // seconds of active play (display only — no bonus)
+      timerId: null,
+      finished: false
+    };
+  }
+  var state = freshState();
+  window.BK_DEBUG = {
+    getState: function () { return state; },
+    supports: function (id) { var th = theoryById(id); return th ? theorySupports(th) : null; }
+  };
+  var currentMood = "title";
+
+  /* ---------------------------- helpers -------------------------------- */
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function clueCount() { return Object.keys(state.clues).length; }
+  function topicCount() { return Object.keys(state.asked).length; }
+  function fmtTime(sec) {
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+  }
+
+  function toast(msg, ms) {
+    var root = $("#toast-root");
+    while (root.children.length >= 3) root.removeChild(root.firstChild); // cap stacked toasts
+    var el = document.createElement("div");
+    el.className = "toast";
+    el.innerHTML = msg;
+    root.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add("show"); });
+    setTimeout(function () {
+      el.classList.remove("show");
+      setTimeout(function () { el.remove(); }, 400);
+    }, ms || 3400);
+  }
+  function clearToasts() { $("#toast-root").innerHTML = ""; }
+
+  function openModal(html) {
+    var root = $("#modal-root");
+    root.innerHTML = '<div class="modal-back"><div class="modal">' + html + "</div></div>";
+    root.classList.add("open");
+    var back = root.querySelector(".modal-back");
+    back.addEventListener("click", function (e) {
+      if (e.target === back) closeModal();
+    });
+  }
+  function closeModal() {
+    var root = $("#modal-root");
+    root.classList.remove("open");
+    root.innerHTML = "";
+  }
+  function confirmModal(msg, okLabel, onYes) {
+    openModal(
+      "<h3>Are you sure?</h3><p>" + msg + "</p>" +
+      '<div class="btn-row"><button class="btn" id="m-no">Cancel</button>' +
+      '<button class="btn primary" id="m-yes">' + esc(okLabel) + "</button></div>"
+    );
+    $("#m-no").addEventListener("click", function () { window.AudioFX.click(); closeModal(); });
+    $("#m-yes").addEventListener("click", function () { window.AudioFX.click(); closeModal(); onYes(); });
+  }
+
+  /* ------------------------------ HUD ---------------------------------- */
+  function updateHUD() {
+    $("#hud-clues").textContent = clueCount() + "/" + Object.keys(D.CLUES).length;
+    $("#hud-time").textContent = fmtTime(state.elapsed);
+    $("#hud-score").textContent = state.score;
+    var muteBtn = $("#btn-mute");
+    muteBtn.textContent = window.AudioFX.muted ? "\uD83D\uDD07" : "\uD83D\uDD0A";
+    muteBtn.setAttribute("aria-label", window.AudioFX.muted ? "Unmute" : "Mute");
+  }
+
+  function startTimer() {
+    stopTimer();
+    state.timerId = setInterval(function () {
+      state.elapsed++;
+      $("#hud-time").textContent = fmtTime(state.elapsed);
+    }, 1000);
+  }
+  function stopTimer() {
+    if (state.timerId) { clearInterval(state.timerId); state.timerId = null; }
+  }
+
+  function showScreen(name) {
+    state.screen = name;
+    var screens = document.querySelectorAll(".screen");
+    for (var i = 0; i < screens.length; i++) screens[i].classList.add("hidden");
+    $("#screen-" + name).classList.remove("hidden");
+    $("#hud").classList.toggle("hidden", name === "title" || name === "results");
+    currentMood = name === "scene" ? (state.scene || "title") : name;
+    if (window.AudioFX && window.AudioFX.setMood) {
+      try { window.AudioFX.setMood(currentMood); } catch (e) {}
+    }
+    window.scrollTo(0, 0);
+  }
+
+  /* --------------------------- title / intro ---------------------------- */
+  var introIdx = 0;
+  function renderIntro() {
+    var c = D.INTRO[introIdx];
+    $("#intro-kicker").textContent = c.kicker;
+    $("#intro-title").textContent = c.title;
+    $("#intro-text").textContent = c.text;
+    $("#intro-count").textContent = (introIdx + 1) + " / " + D.INTRO.length;
+    $("#btn-intro-back").disabled = introIdx === 0;
+    $("#btn-intro-next").textContent = introIdx === D.INTRO.length - 1 ? "Open the case file \u2192" : "Next \u2192";
+  }
+
+  function beginInvestigation() {
+    window.AudioFX.unlock();
+    window.AudioFX.click();
+    showScreen("intro");
+    introIdx = 0;
+    renderIntro();
+  }
+
+  function finishIntro() {
+    window.AudioFX.click();
+    startTimer();
+    window.Platform.gameplayStart();   // active gameplay begins
+    window.AudioFX.startAmbient();
+    renderMap();
+    showScreen("map");
+  }
+
+  /* --------------------------- best persistence ------------------------- */
+  function saveBest(stars, rank, allClues) {
+    try {
+      var prev = null;
+      try { prev = JSON.parse(window.localStorage.getItem("bk_case10_best") || "null"); } catch (e) {}
+      var best = { stars: stars, score: state.score, rank: rank, allClues: allClues };
+      if (!(prev && (prev.stars > stars || (prev.stars === stars && prev.score >= state.score)))) {
+        window.localStorage.setItem("bk_case10_best", JSON.stringify(best));
+      }
+    } catch (e) {}
+  }
+  function showBest() {
+    var el = $("#best-line");
+    try {
+      var b = JSON.parse(window.localStorage.getItem("bk_case10_best") || "null");
+      if (b && b.stars) {
+        el.textContent = "Your best: " + "\u2605".repeat(b.stars) + "\u2606".repeat(3 - b.stars) +
+          " \u00B7 " + b.score + " pts (" + b.rank + ")" + (b.allClues ? " \u00B7 \uD83D\uDD0E all 8 clues" : "");
+        el.classList.remove("hidden");
+        return;
+      }
+    } catch (e) {}
+    el.classList.add("hidden");
+  }
+
+  /* -------------------------------- map --------------------------------- */
+  function renderMap() {
+    var wrap = $("#map-cards");
+    wrap.innerHTML = "";
+    D.SCENE_ORDER.forEach(function (sid) {
+      var sc = D.SCENES[sid];
+      var locked = state.scenes.indexOf(sid) === -1;
+      var found = sc.hotspots.filter(function (h) { return state.clues[h.clue]; }).length;
+      var card = document.createElement("button");
+      card.className = "map-card" + (locked ? " locked" : "");
+      card.innerHTML =
+        '<div class="map-card-name">' + esc(sc.name) + "</div>" +
+        '<div class="map-card-sub">' + esc(sc.sub) + "</div>" +
+        (locked
+          ? '<div class="map-card-lock">\uD83D\uDD12 Locked \u2014 follow the evidence</div>'
+          : '<div class="map-card-progress">' + found + "/" + sc.hotspots.length + " clues</div>");
+      if (!locked) {
+        card.addEventListener("click", function () {
+          window.AudioFX.click();
+          openScene(sid);
+        });
+      } else {
+        card.addEventListener("click", function () {
+          toast("This location is locked. Keep following the evidence.");
+        });
+      }
+      wrap.appendChild(card);
+    });
+
+    var n = clueCount(), need = D.CLUES_TO_UNLOCK_DEDUCTION;
+    var btn = $("#btn-deduction");
+    btn.disabled = n < need;
+    btn.innerHTML = n >= need
+      ? "\uD83E\uDDEC Open the deduction board"
+      : "\uD83E\uDDEC Deduction board (" + n + "/" + need + " clues needed)";
+  }
+
+  /* ------------------------------- scene -------------------------------- */
+  function renderSceneArt(sid) {
+    var sc = D.SCENES[sid];
+    var wrap = $("#scene-art");
+    var url = PORTAL_ART.scenes && PORTAL_ART.scenes[sid];
+    if (url) {
+      // Illustrated noir background (build-time manifest guarantees the file
+      // exists; onerror is a bare-HTML-deployment safety net only).
+      wrap.innerHTML = "";
+      var img = document.createElement("img");
+      img.className = "scene-bg";
+      img.src = url;
+      img.alt = "";
+      img.draggable = false;
+      img.addEventListener("error", function () { wrap.innerHTML = sc.art; });
+      wrap.appendChild(img);
+    } else {
+      wrap.innerHTML = sc.art;   // inline SVG fallback
+    }
+  }
+
+  function openScene(sid) {
+    state.scene = sid;
+    var sc = D.SCENES[sid];
+    window.Platform.gameplayStart();
+
+    renderSceneArt(sid);
+    $("#scene-name").textContent = sc.name;
+    $("#scene-sub").textContent = sc.sub;
+    $("#scene-blurb").textContent = sc.blurb;
+
+    // hotspots
+    var layer = $("#hotspot-layer");
+    layer.innerHTML = "";
+    sc.hotspots.forEach(function (hs) {
+      if (hs.requires && !state.clues[hs.requires]) return;   // chained clue
+      var found = !!state.clues[hs.clue];
+      var b = document.createElement("button");
+      b.className = "hotspot" + (found ? " found" : "");
+      b.style.left = hs.x + "%";
+      b.style.top = hs.y + "%";
+      b.setAttribute("aria-label", hs.label);
+      b.dataset.hs = hs.id;
+      b.innerHTML = "<span>" + (found ? "\u2713" : "?") + "</span>";
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        onHotspot(hs);
+      });
+      layer.appendChild(b);
+    });
+
+    // NPC talk chips
+    var talk = $("#talk-row");
+    talk.innerHTML = "";
+    (sc.npcs || []).forEach(function (nid) {
+      var npc = D.NPCS[nid];
+      var b = document.createElement("button");
+      b.className = "talk-chip";
+      b.dataset.npc = nid;
+      b.innerHTML = "\uD83D\uDCAC Talk: " + esc(npc.name);
+      b.addEventListener("click", function () { openNPC(nid); });
+      talk.appendChild(b);
+    });
+
+    renderSetPiecePanel(sid);
+    showScreen("scene");
+    updateHUD();
+  }
+
+  function pulseHotspot(hsId) {
+    var el = document.querySelector('[data-hs="' + hsId + '"]');
+    if (el) {
+      el.classList.add("pulse");
+      setTimeout(function () { el.classList.remove("pulse"); }, 2600);
+    }
+  }
+
+  function clueDescText(clueId) {
+    var clue = D.CLUES[clueId];
+    if (D.TWIST && clueId === D.TWIST.clue && !state.twistFired && clue.descPre) return clue.descPre;
+    return clue.desc;
+  }
+  function clueFlavorText(clueId) {
+    var clue = D.CLUES[clueId];
+    if (D.TWIST && clueId === D.TWIST.clue && !state.twistFired && clue.flavorPre) return clue.flavorPre;
+    return clue.flavor;
+  }
+  function maybeTwist() {
+    if (!D.TWIST || state.twistFired) return false;
+    if (state.clues[D.TWIST.clue] && state.clues[D.TWIST.triggerClue]) {
+      state.twistFired = true;
+      return true;
+    }
+    return false;
+  }
+  function showTwistModal() {
+    openModal(
+      '<div class="twist-banner">\u2728 UNEXPECTED TWIST!</div>' +
+      "<h3>The Lab Film changes everything</h3>" +
+      "<p>The Lab Film & Singed Fibres of <b>" + esc(D.CLUES[D.TWIST.clue].name) + "</b> show the sphere drifting past the cottage window in real air, and the microscope reveals a tiny melted pinhole in the glass with real singed curtain fibres behind it. No afterimage in an eye can melt glass or singe a curtain — the windowpane sphere was not a trick of the eye at all. It was a real, hot, physical ball of glowing material.</p>" +
+      "<p>Your journal entry has been rewritten, and the deduction board has changed: that clue no longer supports <b>" + esc(theoryById(D.TWIST.fromTheory).title) + "</b> — it now supports <b>" + esc(theoryById(D.TWIST.toTheory).title) + "</b>.</p>" +
+      '<button class="btn primary" id="m-twist-ok">I see it now!</button>'
+    );
+    $("#m-twist-ok").addEventListener("click", function () {
+      window.AudioFX.click();
+      closeModal();
+      openScene(state.scene);
+      updateHUD();
+      toast("\uD83D\uDCD3 <b>Journal rewritten</b> — the windowpane-sphere clue now supports the glowing-vapour theory.");
+    });
+  }
+  function showClueModal(clueId) {
+    var clue = D.CLUES[clueId];
+    openModal(
+      '<div class="clue-head"><span class="clue-icon">' + clue.icon + '</span>' +
+      '<h3>' + esc(clue.name) + "</h3></div>" +
+      "<p>" + esc(clueDescText(clueId)) + "</p>" +
+      '<div class="clue-points">+' + CLUE_PTS + ' pts \u00B7 added to your journal</div>' +
+      '<button class="btn primary" id="m-ok">Continue investigating</button>'
+    );
+    $("#m-ok").addEventListener("click", function () {
+      window.AudioFX.click();
+      closeModal();
+      if (maybeTwist()) { showTwistModal(); }
+      else { openScene(state.scene); }
+      updateHUD();
+    });
+  }
+  function onHotspot(hs) {
+    window.AudioFX.click();
+    var clue = D.CLUES[hs.clue];
+    if (state.clues[hs.clue]) {
+      toast("<b>" + esc(clue.name) + ".</b> " + esc(clueFlavorText(hs.clue)));
+      return;
+    }
+    // The Lab Recreation Data is earned by the Guide the Glowing Sphere set piece.
+    if (hs.clue === "testnotes" && !state.setPiece.done) { openSparkCell(); return; }
+    state.clues[hs.clue] = true;
+    state.score += CLUE_PTS;
+    window.AudioFX.clue();
+    showClueModal(hs.clue);
+    updateHUD();
+  }
+
+  /* ------------------------------ dialogue ------------------------------ */
+  function openNPC(nid) {
+    window.AudioFX.click();
+    var npc = D.NPCS[nid];
+    var portrait = "";
+    var purl = PORTAL_ART.npcs && PORTAL_ART.npcs[nid];
+    if (purl) {
+      portrait = '<img class="npc-portrait" alt="" draggable="false">';
+    }
+    var topics = npc.topics.map(function (t, i) {
+      var ok = !t.requires || state.clues[t.requires];
+      var asked = !!state.asked[nid + ":" + i];
+      return { t: t, i: i, ok: ok, asked: asked };
+    });
+    var html =
+      '<div class="npc-head">' + portrait +
+      '<div class="npc-titles"><h3>' + esc(npc.name) + '</h3><div class="npc-role">' + esc(npc.role) + "</div></div></div>" +
+      '<p class="npc-intro">' + esc(npc.intro) + "</p>" +
+      '<div class="topics">' +
+      topics.map(function (o) {
+        if (!o.ok) {
+          return '<button class="btn topic locked" data-i="' + o.i + '" disabled>\uD83D\uDD12 ' + esc(o.t.q) + "<small>Find more evidence first</small></button>";
+        }
+        return '<button class="btn topic" data-i="' + o.i + '">' + esc(o.t.q) +
+          (o.asked ? " <small>\u2713 asked</small>" : "") + "</button>";
+      }).join("") +
+      "</div>" +
+      '<button class="btn" id="m-ok">Leave</button>';
+    openModal(html);
+    if (purl) {
+      var img = document.querySelector("#modal-root .npc-portrait");
+      if (img) {
+        img.addEventListener("error", function () { img.remove(); });
+        img.src = purl;
+      }
+    }
+    $("#m-ok").addEventListener("click", function () { window.AudioFX.click(); closeModal(); });
+    var btns = document.querySelectorAll("#modal-root .topic:not(.locked)");
+    for (var k = 0; k < btns.length; k++) {
+      (function (b) {
+        b.addEventListener("click", function () {
+          answerTopic(nid, parseInt(b.dataset.i, 10));
+        });
+      })(btns[k]);
+    }
+  }
+
+  function answerTopic(nid, i) {
+    window.AudioFX.paper();
+    var npc = D.NPCS[nid];
+    var t = npc.topics[i];
+    var key = nid + ":" + i;
+    var first = !state.asked[key];
+    state.asked[key] = true;
+
+    var effects = "";
+    if (first) {
+      state.score += TOPIC_PTS;
+      effects += '<div class="fx">\uD83D\uDCAC Witness questioned (+' + TOPIC_PTS + ' pts)</div>';
+      if (t.note) {
+        state.notes.push({ text: t.note });
+        state.score += INSIGHT_PTS;
+        effects += '<div class="fx">\uD83D\uDCDD Insight noted (+' + INSIGHT_PTS + ' pts)</div>';
+      }
+      if (t.unlockScene && state.scenes.indexOf(t.unlockScene) === -1) {
+        state.scenes.push(t.unlockScene);
+        effects += '<div class="fx big">\uD83D\uDD06 New location unlocked: ' + esc(D.SCENES[t.unlockScene].name) + "</div>";
+        window.AudioFX.clue();
+      }
+      if (t.hintScene) {
+        effects += '<div class="fx">\uD83D\uDCA1 Worth a look: ' + esc(D.SCENES[t.hintScene].name) + "</div>";
+      }
+    }
+
+    openModal(
+      '<div class="npc-head"><h3>' + esc(npc.name) + "</h3></div>" +
+      '<p class="q">\u201C' + esc(t.q) + "\u201D</p>" +
+      '<p class="a">' + esc(t.a) + "</p>" +
+      effects +
+      '<button class="btn primary" id="m-ok">' + (t.unlockScene && first ? "Go to the map" : "Back") + "</button>"
+    );
+    $("#m-ok").addEventListener("click", function () {
+      window.AudioFX.click();
+      closeModal();
+      if (t.unlockScene && first) { renderMap(); showScreen("map"); }
+      else { openScene(state.scene); }
+      updateHUD();
+    });
+    updateHUD();
+  }
+
+  /* ------------------------------ journal ------------------------------- */
+  function clueDescHTML(clueId) {
+    var clue = D.CLUES[clueId];
+    if (D.TWIST && clueId === D.TWIST.clue) {
+      if (!state.twistFired && clue.descPre) return esc(clue.descPre);
+      if (state.twistFired) {
+        return esc(clue.desc) + "<br><s>" + esc(clue.twistOrig || "") +
+          "</s> <i>(first, wrong reading — corrected by the Lab Film)</i>";
+      }
+    }
+    return esc(clue.desc);
+  }
+  function openJournal() {
+    window.AudioFX.paper();
+    var ids = Object.keys(D.CLUES).filter(function (id) { return state.clues[id]; });
+    var html = "";
+    html += '<div class="j-sec"><b>Clues ' + ids.length + "/" + Object.keys(D.CLUES).length + "</b></div>";
+    html += ids.length
+      ? ids.map(function (id) {
+          var c = D.CLUES[id];
+          return '<div class="j-clue"><span class="j-icon">' + c.icon + '</span><div><b>' + esc(c.name) + "</b><p>" + clueDescHTML(id) + "</p></div></div>";
+        }).join("")
+      : "<p class='j-empty'>No clues yet. Tap the glowing <b>?</b> markers in each location.</p>";
+    if (state.notes.length) {
+      html += '<div class="j-sec"><b>Insights</b></div>' + state.notes.map(function (n) {
+        return '<div class="j-note">\uD83D\uDCDD ' + esc(n.text) + "</div>";
+      }).join("");
+    }
+    $("#journal-body").innerHTML = html;
+    $("#journal").classList.add("open");
+  }
+  function closeJournal() { $("#journal").classList.remove("open"); }
+
+  /* -------------------------------- hint -------------------------------- */
+  function nextHintTarget() {
+    // 1) unlock guidance first: sphere found but ridge still locked -> Rose Delgado
+    if (state.clues.jar && state.scenes.indexOf("workshop") === -1) {
+      return { kind: "npc", scene: "digtent", npc: "konig", msg: "Ask <b>Rose Delgado</b> on the <b>village green</b> where the best storm view is." };
+    }
+    // 2) rod found but the archive still locked -> Dr Nair knows the archive
+    if (state.clues.rod && state.scenes.indexOf("archive") === -1) {
+      return { kind: "npc", scene: "workroom", npc: "layla", msg: "Ask <b>Dr. Nair</b> in the <b>weather station lab</b> where the old storm films are kept." };
+    }
+    // 3) first unfound, reachable hotspot in scene order
+    for (var s = 0; s < D.SCENE_ORDER.length; s++) {
+      var sid = D.SCENE_ORDER[s];
+      if (state.scenes.indexOf(sid) === -1) continue;
+      var sc = D.SCENES[sid];
+      for (var h = 0; h < sc.hotspots.length; h++) {
+        var hs = sc.hotspots[h];
+        if (hs.requires && !state.clues[hs.requires]) continue;
+        if (!state.clues[hs.clue]) return { kind: "hotspot", scene: sid, hs: hs };
+      }
+    }
+    return null;
+  }
+
+  function grantHint() {
+    var t = nextHintTarget();
+    state.hints++;
+    if (!t) {
+      toast("You\u2019ve found every clue. Time for the <b>deduction board</b>.");
+      return;
+    }
+    if (t.kind === "npc") { toast("\uD83D\uDCA1 " + t.msg); return; }
+    if (state.scene === t.scene) {
+      toast("\uD83D\uDCA1 Look closely at the <b>" + esc(t.hs.label.toLowerCase()) + "</b>\u2026");
+      pulseHotspot(t.hs.id);
+    } else {
+      toast("\uD83D\uDCA1 A clue waits at the <b>" + esc(D.SCENES[t.scene].name) + "</b>. Open the map to travel.");
+    }
+  }
+
+  function onHintButton() {
+    window.AudioFX.click();
+    if (window.Platform.isCrazyGames) {
+      // Rewarded ad flow: user-initiated, reward ONLY on adFinished.
+      var btn = $("#btn-hint");
+      btn.disabled = true;
+      toast("Loading hint\u2026");
+      window.Platform.rewardedAd(function (ok) {
+        btn.disabled = false;
+        if (ok) { grantHint(); }
+        else { toast("The ad couldn\u2019t load. Try again in a moment \u2014 the button still works."); }
+      });
+    } else {
+      // itch.io / local: free hint, small score cost, never a dead button.
+      state.score = Math.max(0, state.score - HINT_COST);
+      updateHUD();
+      grantHint();
+    }
+  }
+
+  /* ------------------------- deduction: drag puzzle --------------------- */
+  var selectedChip = null;   // tap-to-place selection
+
+  function theoryById(id) {
+    for (var i = 0; i < D.THEORIES.length; i++) {
+      if (D.THEORIES[i].id === id) return D.THEORIES[i];
+    }
+    return null;
+  }
+
+  /* Effective supports: BEFORE the twist fires, the twist clue belongs to
+     its "from" theory; after, only to its "to" theory (canonical data). */
+  function theorySupports(th) {
+    var s = th.supports.slice();
+    var T = D.TWIST;
+    if (T && !state.twistFired) {
+      if (th.id === T.toTheory) s = s.filter(function (c) { return c !== T.clue; });
+      if (th.id === T.fromTheory && s.indexOf(T.clue) === -1) s.push(T.clue);
+    }
+    return s;
+  }
+
+  /** slots still required: found supporting clues not yet matched */
+  function requiredSlots() {
+    var req = [];
+    D.THEORIES.forEach(function (th) {
+      theorySupports(th).forEach(function (cid) {
+        if (state.clues[cid] && !state.placed[cid]) req.push(cid);
+      });
+    });
+    return req;
+  }
+  function deductionDone() { return requiredSlots().length === 0; }
+
+  function openDeduction() {
+    if (clueCount() < D.CLUES_TO_UNLOCK_DEDUCTION) return;
+    window.AudioFX.click();
+    window.Platform.gameplayStop();          // natural break -> midgame ad slot
+    toast("The board is set. One last look at the evidence\u2026");
+    window.Platform.midgameAd().then(function () {
+      renderDeduction();
+      showScreen("deduction");
+    });
+  }
+
+  function clearSelection() {
+    selectedChip = null;
+    var sels = document.querySelectorAll(".ev-chip.selected");
+    for (var i = 0; i < sels.length; i++) sels[i].classList.remove("selected");
+  }
+
+  function toggleSelect(chip) {
+    if (chip.classList.contains("selected")) { clearSelection(); return; }
+    clearSelection();
+    chip.classList.add("selected");
+    selectedChip = chip;
+    toast("Selected <b>" + esc(chip.dataset.name) + "</b> \u2014 now tap the theory it supports.");
+  }
+
+  function wireChip(chip, clueId, clueName) {
+    var startX = 0, startY = 0, ghost = null, dragging = false, pid = null, justDragged = false;
+    chip.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      pid = e.pointerId;
+      startX = e.clientX; startY = e.clientY;
+      dragging = false;
+      try { chip.setPointerCapture(pid); } catch (err) {}
+    });
+    chip.addEventListener("pointermove", function (e) {
+      if (pid === null || e.pointerId !== pid) return;
+      var dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!dragging && Math.sqrt(dx * dx + dy * dy) > 10) {
+        dragging = true;
+        ghost = chip.cloneNode(true);
+        ghost.className = "ev-chip drag-ghost";
+        ghost.style.left = e.clientX + "px";
+        ghost.style.top = e.clientY + "px";
+        document.body.appendChild(ghost);
+        chip.style.opacity = "0.35";
+        clearSelection();
+      }
+      if (dragging && ghost) {
+        ghost.style.left = e.clientX + "px";
+        ghost.style.top = e.clientY + "px";
+        var el = document.elementFromPoint(e.clientX, e.clientY);
+        var card = el && el.closest ? el.closest(".theory-card") : null;
+        var hots = document.querySelectorAll(".theory-card.drop-hover");
+        for (var i = 0; i < hots.length; i++) hots[i].classList.remove("drop-hover");
+        if (card) card.classList.add("drop-hover");
+      }
+    });
+    function endDrag(e) {
+      if (pid === null) return;
+      if (e.pointerId !== undefined && e.pointerId !== pid) return;
+      pid = null;
+      var hots = document.querySelectorAll(".theory-card.drop-hover");
+      for (var i = 0; i < hots.length; i++) hots[i].classList.remove("drop-hover");
+      if (dragging) {
+        justDragged = true;
+        setTimeout(function () { justDragged = false; }, 50);
+        var el = document.elementFromPoint(e.clientX, e.clientY);
+        var card = el && el.closest ? el.closest(".theory-card") : null;
+        if (ghost) { ghost.remove(); ghost = null; }
+        chip.style.opacity = "";
+        dragging = false;
+        if (card) attemptPlace(clueId, card.getAttribute("data-theory"));
+      }
+    }
+    chip.addEventListener("pointerup", endDrag);
+    chip.addEventListener("pointercancel", function () {
+      pid = null; dragging = false;
+      if (ghost) { ghost.remove(); ghost = null; }
+      chip.style.opacity = "";
+    });
+    // tap / keyboard: click only fires as a tap when it wasn't a drag
+    chip.addEventListener("click", function () {
+      if (justDragged) return;
+      toggleSelect(chip);
+    });
+  }
+
+  function attemptPlace(clueId, theoryId) {
+    var th = theoryById(theoryId);
+    if (!th) return;
+    if (clueId.indexOf("decoy:") === 0) {
+      // Red herring: never placeable — bounces back with a wrong-drop penalty.
+      state.wrongDrops++;
+      window.AudioFX.wrong();
+      var card = document.querySelector('.theory-card[data-theory="' + theoryId + '"]');
+      if (card) {
+        card.classList.add("shake");
+        setTimeout(function () { card.classList.remove("shake"); }, 450);
+      }
+      toast("That's a red herring \u2014 it doesn't support <b>any</b> theory. Leave it in the pool.");
+      return;
+    }
+    if (state.placed[clueId]) { toast("Already matched on the board."); return; }
+    if (theorySupports(th).indexOf(clueId) === -1) {
+      // wrong fit: feedback, correctable, no score change
+      state.wrongDrops++;
+      window.AudioFX.wrong();
+      var card = document.querySelector('.theory-card[data-theory="' + theoryId + '"]');
+      if (card) {
+        card.classList.add("shake");
+        setTimeout(function () { card.classList.remove("shake"); }, 450);
+      }
+      toast("That doesn\u2019t fit <b>" + esc(th.title) + "</b> \u2014 re-read what the theory claims, and try another.");
+      return;
+    }
+    state.placed[clueId] = theoryId;
+    state.score += MATCH_PTS;
+    window.AudioFX.snap();
+    clearSelection();
+    renderDeduction();
+    updateHUD();
+    if (deductionDone()) {
+      toast("\u2705 The board is complete \u2014 every link matched. Close the case!");
+    } else {
+      toast("\u2705 <b>" + esc(D.CLUES[clueId].name) + "</b> locks in (+" + MATCH_PTS + ").");
+    }
+  }
+
+  function updateDedProgress() {
+    var totalReq = 0, doneReq = 0;
+    D.THEORIES.forEach(function (th) {
+      theorySupports(th).forEach(function (cid) {
+        if (state.clues[cid]) { totalReq++; if (state.placed[cid]) doneReq++; }
+      });
+    });
+    $("#ded-progress").textContent =
+      "Evidence matched: " + doneReq + "/" + totalReq + " links \u00B7 " +
+      clueCount() + "/" + Object.keys(D.CLUES).length + " clues \u00B7 " +
+      state.notes.length + " insights";
+    var btn = $("#btn-close-case");
+    var done = totalReq > 0 && doneReq === totalReq;
+    btn.disabled = !done;
+    btn.textContent = done ? "\u2705 Close the case" : "\uD83D\uDD12 Close the case (" + doneReq + "/" + totalReq + " links)";
+  }
+
+  function renderDeduction() {
+    clearSelection();
+    var pool = $("#evidence-pool");
+    pool.innerHTML = '<p class="pool-label">Your evidence \u2014 drag each clue onto the theory it supports (or tap a clue, then tap a theory). Watch out: some chips are red herrings that fit no theory.</p>';
+    Object.keys(D.CLUES).forEach(function (cid) {
+      if (!state.clues[cid] || state.placed[cid]) return;
+      var c = D.CLUES[cid];
+      var chip = document.createElement("button");
+      chip.className = "ev-chip";
+      chip.setAttribute("data-clue", cid);
+      chip.setAttribute("data-name", c.name);
+      chip.innerHTML = esc(c.icon) + " " + esc(c.name);
+      pool.appendChild(chip);
+      wireChip(chip, cid, c.name);
+    });
+    // Red-herring decoys: always present in the pool, never placeable.
+    (D.DECOYS || []).forEach(function (dc, i) {
+      var chip = document.createElement("button");
+      chip.className = "ev-chip";
+      chip.setAttribute("data-clue", "decoy:" + i);
+      chip.setAttribute("data-name", dc.name);
+      chip.innerHTML = esc(dc.icon) + " " + esc(dc.name);
+      pool.appendChild(chip);
+      wireChip(chip, "decoy:" + i, dc.name);
+    });
+
+    var wrap = $("#theory-cards");
+    wrap.innerHTML = "";
+    D.THEORIES.forEach(function (th) {
+      var card = document.createElement("div");
+      card.className = "theory-card";
+      card.setAttribute("data-theory", th.id);
+      var slots = theorySupports(th).map(function (cid) {
+        var c = D.CLUES[cid];
+        if (state.placed[cid]) {
+          return '<li class="ev-slot filled">\u2713 ' + esc(c.icon) + " " + esc(c.name) + "</li>";
+        }
+        if (!state.clues[cid]) {
+          return '<li class="ev-slot missing">\u00B7 undiscovered evidence</li>';
+        }
+        return '<li class="ev-slot">Drop a clue here</li>';
+      }).join("");
+      card.innerHTML =
+        "<h4>" + esc(th.title) + "</h4><p>" + esc(th.desc) + "</p>" +
+        '<ul class="ev-slots">' + slots + "</ul>";
+      card.addEventListener("click", function () {
+        if (selectedChip) {
+          var cid = selectedChip.getAttribute("data-clue");
+          clearSelection();
+          attemptPlace(cid, th.id);
+        }
+      });
+      wrap.appendChild(card);
+    });
+    updateDedProgress();
+  }
+
+  /* ------------------------------ results ------------------------------- */
+  function closeCase() {
+    if (!deductionDone()) return;
+    state.finished = true;
+    stopTimer();
+    clearToasts();   // audit #7: never leave a stale toast on the results screen
+
+    var clues = clueCount();
+    var notes = state.notes.length;
+    var topics = topicCount();
+    var matched = Object.keys(state.placed).length;
+
+    var rank = D.RANKS.filter(function (r) { return state.score >= r.min; })[0].title;
+
+    // stars: thoroughness + deduction accuracy
+    var stars = 1;
+    if (clues === 8 && state.wrongDrops <= 1 && topics >= 7) stars = 3;
+    else if (clues >= 7 && state.wrongDrops <= 3) stars = 2;
+
+    var allClues = clues === 8;
+    $("#res-rank").textContent = rank;
+    $("#res-stars").textContent = "\u2605".repeat(stars) + "\u2606".repeat(3 - stars);
+    var badge = $("#res-badge");
+    if (allClues) {
+      badge.textContent = "\uD83D\uDD0E True Detective \u2014 all 8 clues found";
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+
+    $("#res-board").innerHTML = D.THEORIES.map(function (th) {
+      var items = theorySupports(th).filter(function (cid) { return state.placed[cid]; })
+        .map(function (cid) { return "<li>\u2713 " + esc(D.CLUES[cid].name) + "</li>"; }).join("");
+      var missing = theorySupports(th).filter(function (cid) { return !state.placed[cid]; }).length;
+      return '<div class="res-theory-block"><b>' + esc(th.title) + "</b><ul>" + items +
+        (missing ? "<li><i>" + missing + " link" + (missing > 1 ? "s" : "") + " undiscovered</i></li>" : "") +
+        "</ul></div>";
+    }).join("");
+
+    $("#res-score").innerHTML =
+      "<li>Clues found: <b>" + clues + " \u00D7 100 = " + (clues * CLUE_PTS) + "</b></li>" +
+      "<li>Insights noted: <b>" + notes + " \u00D7 50 = " + (notes * INSIGHT_PTS) + "</b></li>" +
+      "<li>Witnesses questioned: <b>" + topics + " \u00D7 25 = " + (topics * TOPIC_PTS) + "</b></li>" +
+      "<li>Evidence matched: <b>" + matched + " \u00D7 150 = " + (matched * MATCH_PTS) + "</b></li>" +
+      (state.hints ? "<li>Hints used: <b>" + state.hints + " \u00D7 \u221250 = \u2212" + (state.hints * HINT_COST) + "</b></li>" : "") +
+      "<li>Time on the case: <b>" + fmtTime(state.elapsed) + "</b> (no bonus \u2014 thorough beats fast)</li>" +
+      "<li class='total'>Final score: <b>" + state.score + "</b></li>";
+
+    $("#res-setpiece").innerHTML = state.setPiece.done
+      ? "Guide the Glowing Sphere complete: <b>" + state.setPiece.caught + " glow markers</b> guided in order \u00B7 Set Piece bonus: <b>" + state.setPiece.bonus + " pts</b> (scored separately from clue points \u00B7 attempts: " + state.setPiece.attempts + ")"
+      : "Guide the Glowing Sphere not completed.";
+    saveBest(stars, rank, allClues);
+    window.Platform.gameplayStop();
+    window.Platform.happyTime();
+    window.AudioFX.success();
+    showScreen("results");
+    updateHUD();
+  }
+
+  /* --------------------- set piece: Guide the Glowing Sphere! --------------------- */
+  var ls = { active: false, caught: 0, timeLeft: 30, timer: null, spawner: null };
+  var LS_NEED = 6, LS_SECONDS = 30;
+  var SC_POSITIONS = [[16, 30], [50, 16], [84, 30], [84, 72], [50, 86], [16, 72]];
+  var SC_ORDER = [3, 1, 5, 2, 6, 4]; // terminal position index -> cell number shown
+
+  function lsCleanup() {
+    if (ls.timer) { clearInterval(ls.timer); ls.timer = null; }
+    if (ls.spawner) { clearInterval(ls.spawner); ls.spawner = null; }
+    ls.active = false;
+  }
+  function renderSetPiecePanel(sid) {
+    var panel = $("#setpiece-panel");
+    if (!panel) return;
+    if (sid !== "workroom") { panel.classList.add("hidden"); panel.innerHTML = ""; return; }
+    panel.classList.remove("hidden");
+    if (state.clues.testnotes) {
+      panel.innerHTML = "\u2705 <b>Guide the Glowing Sphere complete</b> — " + state.setPiece.caught +
+        " glow markers guided in order \u00B7 Set Piece bonus " + state.setPiece.bonus +
+        " pts (scored separately from clue points)";
+    } else if (state.clues.rod) {
+      panel.innerHTML = "\u26A1 <b>Guide the Glowing Sphere!</b> Follow <b>6 glow markers, in order (1 to 6), in 30 seconds</b> to guide one glowing sphere safely on its drift! " +
+        '<button class="btn primary" id="btn-spark">\u26A1 Start Guiding!</button>';
+      $("#btn-spark").addEventListener("click", function () { openSparkCell(); });
+    } else {
+      panel.innerHTML = "\u26A1 A <b>Guide the Glowing Sphere</b> challenge will start here once you find the singed grass ring.";
+    }
+  }
+  function lsFail() {
+    lsCleanup();
+    openModal(
+      "<h3>\u23F0 The sphere faded this round</h3>" +
+      "<p>You tracked <b>" + ls.caught + " of " + LS_NEED + "</b> glow markers before the timer ran out. The sphere has faded from sight for now — but a patient guide can always catch its glow again.</p>" +
+      '<div class="btn-row"><button class="btn" id="ls-later">Try again later</button>' +
+      '<button class="btn primary" id="ls-retry">\u26A1 Guide it again</button></div>'
+    );
+    $("#ls-later").addEventListener("click", function () { window.AudioFX.click(); closeModal(); });
+    $("#ls-retry").addEventListener("click", function () { window.AudioFX.click(); openSparkCell(); });
+  }
+  function lsSuccess() {
+    var bonus = ls.caught * 10 + Math.ceil(ls.timeLeft) * 5;
+    lsCleanup();
+    state.setPiece.done = true;
+    state.setPiece.caught = ls.caught;
+    state.setPiece.bonus = bonus;
+    state.clues.testnotes = true;
+    state.score += CLUE_PTS;
+    window.AudioFX.clue();
+    toast("\u26A1 <b>Guide the Glowing Sphere complete!</b> You guided the sphere the whole way! Set Piece bonus: <b>" + bonus + " pts</b> (separate from clue points)");
+    showClueModal("testnotes");
+    updateHUD();
+  }
+  function openSparkCell() {
+    lsCleanup();
+    state.setPiece.attempts++;
+    ls.caught = 0;
+    ls.timeLeft = LS_SECONDS;
+    ls.active = true;
+    openModal(
+      "<h3>\u26A1 Guide the Glowing Sphere!</h3>" +
+      "<p>Guide the sphere <b>in order</b>: tap glow marker <b>1, then 2, 3, 4, 5, 6</b> before the timer runs out. Six markers in order follow one glowing sphere on its drift!</p>" +
+      '<div class="ls-hud"><span>\u23F1\uFE0F <b id="ls-time">' + LS_SECONDS + "</b>s</span>" +
+      '<span>\u26A1 Guided: <b id="ls-count">0/' + LS_NEED + "</b></span></div>" +
+      '<div id="ls-area"></div>' +
+      '<button class="btn" id="ls-quit">Give up for now</button>'
+    );
+    $("#ls-quit").addEventListener("click", function () { lsCleanup(); window.AudioFX.click(); closeModal(); });
+    var area = $("#ls-area");
+    SC_POSITIONS.forEach(function (pos, idx) {
+      var cellNo = SC_ORDER[idx];
+      var b = document.createElement("button");
+      b.className = "spark-terminal";
+      b.type = "button";
+      b.dataset.cell = String(cellNo);
+      b.textContent = "\uD83D\uDD06" + cellNo;
+      b.style.left = pos[0] + "%";
+      b.style.top = pos[1] + "%";
+      b.addEventListener("click", function () {
+        if (!ls.active || b.classList.contains("connected")) return;
+        if (Number(b.dataset.cell) === ls.caught + 1) {
+          ls.caught++;
+          b.classList.add("connected");
+          window.AudioFX.snap();
+          var c = $("#ls-count"); if (c) c.textContent = ls.caught + "/" + LS_NEED;
+          if (ls.caught >= LS_NEED) lsSuccess();
+        } else {
+          b.classList.add("wrong");
+          window.AudioFX.click();
+          setTimeout(function () { b.classList.remove("wrong"); }, 350);
+        }
+      });
+      area.appendChild(b);
+    });
+    ls.timer = setInterval(function () {
+      if (!document.getElementById("ls-area")) { lsCleanup(); return; }
+      ls.timeLeft = Math.max(0, ls.timeLeft - 0.1);
+      var t = $("#ls-time"); if (t) t.textContent = Math.ceil(ls.timeLeft);
+      if (ls.timeLeft <= 0 && ls.active) lsFail();
+    }, 100);
+  }
+  window.BK_SETPIECE_API = {
+    start: function () { openSparkCell(); },
+    info: function () {
+      return { active: ls.active, caught: ls.caught, timeLeft: ls.timeLeft,
+               done: state.setPiece.done, bonus: state.setPiece.bonus, attempts: state.setPiece.attempts };
+    },
+    setTimeLeft: function (s) { if (ls.active) ls.timeLeft = s; }
+  };
+
+  /* ------------------------------- pause -------------------------------- */
+  function openPause() {
+    window.AudioFX.click();
+    window.Platform.gameplayStop();
+    stopTimer();
+    $("#pause-menu").classList.add("open");
+  }
+  function closePause(resume) {
+    $("#pause-menu").classList.remove("open");
+    if (resume && !state.finished && (state.screen === "map" || state.screen === "scene")) {
+      window.Platform.gameplayStart();
+      startTimer();
+    }
+    window.AudioFX.click();
+  }
+
+  /* -------------------------------- boot -------------------------------- */
+  function init() {
+    window.Platform.loadingStart();
+
+    // Illustrated title keyart (build-time manifest); HTML logo stays overlaid.
+    if (PORTAL_ART.title) {
+      var tk = document.createElement("img");
+      tk.alt = "";
+      tk.draggable = false;
+      tk.addEventListener("error", function () { tk.remove(); });
+      tk.src = PORTAL_ART.title;
+      $("#title-keyart").appendChild(tk);
+    }
+    showBest();
+
+    $("#btn-begin").addEventListener("click", beginInvestigation);
+    $("#btn-how").addEventListener("click", function () {
+      window.AudioFX.click();
+      openModal(
+        "<h3>How to play</h3>" +
+        "<p>\uD83D\uDD0D <b>Search</b> each location \u2014 tap the glowing <b>?</b> markers to collect clues.</p>" +
+        "<p>\uD83D\uDCAC <b>Question</b> witnesses and police. Some answers only unlock once you hold the right evidence.</p>" +
+        "<p>\uD83D\uDCCB Your <b>journal</b> keeps every clue and insight.</p>" +
+        "<p>\uD83E\uDDEC At <b>6 of 8 clues</b>, the deduction board opens: <b>drag</b> each clue onto the theory it supports and close the case.</p>" +
+        "<p>There are no dead ends \u2014 you can always keep investigating.</p>" +
+        '<button class="btn primary" id="m-ok">Got it</button>'
+      );
+      $("#m-ok").addEventListener("click", function () { window.AudioFX.click(); closeModal(); });
+    });
+
+    $("#btn-intro-next").addEventListener("click", function () {
+      if (introIdx < D.INTRO.length - 1) { introIdx++; window.AudioFX.click(); renderIntro(); }
+      else { finishIntro(); }
+    });
+    $("#btn-intro-back").addEventListener("click", function () {
+      if (introIdx > 0) { introIdx--; window.AudioFX.click(); renderIntro(); }
+    });
+
+    $("#btn-map").addEventListener("click", function () {
+      window.AudioFX.click();
+      window.Platform.gameplayStart();
+      renderMap();
+      showScreen("map");
+    });
+    $("#btn-deduction").addEventListener("click", openDeduction);
+    $("#btn-close-case").addEventListener("click", function () {
+      window.AudioFX.click();
+      closeCase();
+    });
+    $("#btn-ded-map").addEventListener("click", function () {
+      window.AudioFX.click();
+      window.Platform.gameplayStart();
+      renderMap();
+      showScreen("map");
+    });
+
+    $("#btn-journal").addEventListener("click", openJournal);
+    $("#journal-close").addEventListener("click", function () { window.AudioFX.click(); closeJournal(); });
+    $("#btn-hint").addEventListener("click", onHintButton);
+    $("#btn-pause").addEventListener("click", openPause);
+    $("#btn-mute").addEventListener("click", function () {
+      window.AudioFX.unlock();
+      var m = window.AudioFX.toggleMute();
+      if (!m) { window.AudioFX.startAmbient(); window.AudioFX.setMood(currentMood); }
+      updateHUD();
+    });
+
+    $("#btn-resume").addEventListener("click", function () { closePause(true); });
+    $("#btn-restart").addEventListener("click", function () {
+      confirmModal(
+        "Restart the case from the beginning? Your progress will be lost.",
+        "Restart",
+        function () { $("#pause-menu").classList.remove("open"); location.reload(); }
+      );
+    });
+    $("#btn-pause-how").addEventListener("click", function () {
+      window.AudioFX.click();
+      $("#btn-how").click();
+    });
+    $("#btn-again").addEventListener("click", function () { location.reload(); });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        closeModal();
+        closeJournal();
+        if ($("#pause-menu").classList.contains("open")) closePause(true);
+      }
+    });
+    document.addEventListener("pointerdown", function () { window.AudioFX.unlock(); }, { once: true });
+
+    // Hint button label depends on portal: rewarded ad vs free hint.
+    if (window.Platform.isCrazyGames) {
+      $("#btn-hint").innerHTML = "\uD83D\uDCA1 Hint (\uD83D\uDCFA ad)";
+      $("#btn-hint").title = "Watch a short ad for a hint";
+    } else {
+      $("#btn-hint").innerHTML = "\uD83D\uDCA1 Hint (\u221250)";
+      $("#btn-hint").title = "Get a hint (costs 50 points)";
+    }
+
+    updateHUD();
+    showScreen("title");
+    window.Platform.loadingDone();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+
+</script>
+<style>
+#bk-legal-overlay{position:fixed;inset:0;z-index:2147483647;display:none;align-items:center;justify-content:center;background:rgba(5,7,12,.88);font-family:Georgia,'Times New Roman',serif;padding:12px;box-sizing:border-box}
+#bk-legal-card{background:#10141d;color:#e8e2d4;border:1px solid #c9a227;border-radius:10px;max-width:640px;width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 12px 60px rgba(0,0,0,.7)}
+#bk-legal-head{padding:16px 20px 10px;border-bottom:1px solid #2a2f3d}
+#bk-legal-head h2{margin:0 0 6px;font-size:20px;color:#f5d576;letter-spacing:.5px}
+#bk-legal-summary{padding:10px 20px 0;font-size:14px;line-height:1.5}
+#bk-legal-summary ul{margin:8px 0;padding-left:20px}
+#bk-legal-summary li{margin-bottom:6px}
+#bk-legal-terms{margin:10px 20px;padding:12px 14px;border:1px solid #2a2f3d;border-radius:6px;background:#0a0d14;overflow-y:auto;max-height:30vh;font-size:13px;line-height:1.55;-webkit-overflow-scrolling:touch}
+#bk-legal-terms h3{color:#f5d576;font-size:15px;margin:14px 0 6px}
+#bk-legal-terms p{margin:6px 0}
+#bk-legal-terms .bk-legal-sub{color:#9aa3b5;font-style:italic}
+#bk-legal-terms .bk-legal-clause{padding-left:8px}
+#bk-legal-foot{padding:14px 20px 18px;display:flex;gap:10px;justify-content:center;border-top:1px solid #2a2f3d;margin-top:10px}
+#bk-legal-agree,#bk-legal-close{background:#c9a227;color:#14100a;border:none;border-radius:8px;padding:12px 34px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit}
+#bk-legal-agree:active,#bk-legal-close:active{transform:scale(.97)}
+#bk-legal-link{position:fixed;right:10px;bottom:10px;z-index:2147483646;background:rgba(10,13,20,.75);color:#c9a227;border:1px solid #3a3f4d;border-radius:6px;padding:5px 10px;font-size:11px;font-family:Georgia,serif;cursor:pointer;text-decoration:none;letter-spacing:.5px}
+#bk-legal-link:hover{background:rgba(20,25,38,.9)}
+</style>
+<div id="bk-legal-overlay" role="dialog" aria-modal="true" aria-label="Terms of Use">
+<div id="bk-legal-card">
+<div id="bk-legal-head"><h2>Terms of Use &amp; Legal Disclosure</h2><div style="font-size:13px;color:#9aa3b5">Please read — your agreement is required to play.</div></div>
+<div id="bk-legal-summary"><strong>Key points:</strong><ul>
+<li><strong>Binding arbitration:</strong> disputes are resolved by individual binding arbitration (AAA Consumer Rules, Richmond County, NY) — not in court. You waive any class or collective action. You may opt out within 30 days by emailing beastkid2024@yahoo.com.</li>
+<li><strong>As-is:</strong> the game is provided "as is" with no warranties; our liability is limited as described below.</li>
+<li><strong>Virtual items</strong> (chips, points, scores) have no real-world monetary value and can't be cashed out.</li>
+<li><strong>Age:</strong> players under 13 need a parent or guardian's permission and supervision.</li>
+</ul></div>
+<div id="bk-legal-terms"><p class="bk-legal-sub">(Applies to all Beast Kid games: Case Files series, River Rats Card Club, Troy, and related builds)</p>
+<p><strong>Last updated: September 29, 2026</strong></p>
+<h3>1. Agreement to These Terms</h3>
+<p>By downloading, installing, accessing, or playing any Beast Kid game ("the Game"), you agree to be bound by these Terms of Use ("Terms"). If you do not agree, do not play the Game. We may update these Terms at any time; continued play after changes means you accept the updated Terms.</p>
+<h3>2. Eligibility</h3>
+<p>The Game is intended for a general audience. If you are under 13, you may only play with the permission and supervision of a parent or legal guardian, who agrees to these Terms on your behalf. If you are between 13 and 18 (or the age of majority in your jurisdiction), your parent or guardian must review and agree to these Terms.</p>
+<h3>3. License</h3>
+<p>We grant you a personal, non-exclusive, non-transferable, revocable license to play the Game for your own non-commercial entertainment. You may not copy, modify, distribute, reverse-engineer, or create derivative works from the Game.</p>
+<h3>4. Virtual Items Have No Monetary Value</h3>
+<p>The Game may include virtual chips, points, scores, or other virtual items. These have <strong>no real-world monetary value</strong>, cannot be purchased with real money, cannot be redeemed for cash or prizes, and cannot be transferred outside the Game. We may modify or remove virtual items at any time without liability.</p>
+<h3>5. No Real-Money Gambling</h3>
+<p>Our card and casino-style games are <strong>free social games for entertainment only</strong>. They do not offer real-money gambling, and no real money can be won or lost. Success at a social game does not imply future success at real-money gambling.</p>
+<h3>6. Intellectual Property</h3>
+<p>All content in the Game — including art, music, text, code, characters, and the "Beast Kid" name and branding — is owned by us and protected by intellectual property laws. All rights reserved.</p>
+<h3>7. Disclaimer of Warranties</h3>
+<p>THE GAME IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. We do not guarantee the Game will be uninterrupted, error-free, or secure.</p>
+<h3>8. Limitation of Liability</h3>
+<p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, DATA, OR GOODWILL, ARISING FROM YOUR USE OF THE GAME — EVEN IF WE WERE ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. OUR TOTAL LIABILITY FOR ANY CLAIM WILL NOT EXCEED THE AMOUNT YOU PAID US TO PLAY THE GAME (IF THE GAME IS FREE, THIS AMOUNT IS ZERO).</p>
+<h3>9. BINDING ARBITRATION AND CLASS-ACTION WAIVER — PLEASE READ CAREFULLY</h3>
+<p><strong>You and we agree to resolve disputes through binding individual arbitration instead of in court, and you waive any right to participate in a class action.</strong></p>
+<p class="bk-legal-clause">(a) <strong>Scope.</strong> Except for small-claims court actions and claims for injunctive relief to protect intellectual property, any dispute, claim, or controversy arising out of or relating to the Game or these Terms — including their formation, interpretation, breach, or termination — will be resolved exclusively by binding arbitration on an individual basis.</p>
+<p class="bk-legal-clause">(b) <strong>Administrator and rules.</strong> The arbitration will be administered by the American Arbitration Association (&quot;AAA&quot;) under its Consumer Arbitration Rules, by a single arbitrator. The Federal Arbitration Act governs the interpretation and enforcement of this section.</p>
+<p class="bk-legal-clause">(c) <strong>Location and process.</strong> The arbitration will take place in Richmond County (Staten Island), New York, or another location we both agree on, and may be conducted by telephone or video if the arbitrator permits. Each side pays its own attorneys&#x27; fees; AAA filing and arbitrator fees will be handled under the AAA Consumer Rules&#x27; cost provisions.</p>
+<p class="bk-legal-clause">(d) <strong>Class-action waiver.</strong> YOU AND WE EACH AGREE THAT DISPUTES WILL BE RESOLVED ONLY ON AN INDIVIDUAL BASIS — NOT AS A CLASS, COLLECTIVE, OR REPRESENTATIVE ACTION. The arbitrator may not consolidate claims or preside over any form of representative proceeding.</p>
+<p class="bk-legal-clause">(e) <strong>Small-claims exception.</strong> Either party may bring an individual claim in small-claims court instead of arbitration, as long as the claim stays in that court.</p>
+<p class="bk-legal-clause">(f) <strong>Opt-out.</strong> You may opt out of this arbitration agreement within 30 days of first playing the Game by sending an email to beastkid2024@yahoo.com with the subject line &quot;Arbitration Opt-Out&quot; and your name. Opting out does not affect any other part of these Terms.</p>
+<p class="bk-legal-clause">(g) <strong>Severability.</strong> If the class-action waiver is found unenforceable, this entire arbitration section is void and disputes will proceed in court, subject to Section 10.</p>
+<h3>10. Governing Law and Venue</h3>
+<p>These Terms are governed by the laws of the State of New York, without regard to conflict-of-law principles. Subject to Section 9, any court action must be brought in the state or federal courts located in Richmond County, New York, and you consent to their exclusive jurisdiction.</p>
+<h3>11. Changes to the Game or Terms</h3>
+<p>We may modify, suspend, or discontinue the Game (or any part of it) at any time without notice or liability. We may update these Terms by posting a new version with the Game; your continued play constitutes acceptance.</p>
+<h3>12. Contact</h3>
+<p>Questions about these Terms: beastkid2024@yahoo.com</p>
+<p class="bk-legal-sub">This is a summary-form consumer agreement, not legal advice. Have an attorney review before relying on it in a dispute.</p></div>
+<div id="bk-legal-foot">
+<button id="bk-legal-agree" type="button">I Agree</button>
+<button id="bk-legal-close" type="button" style="display:none">Close</button>
+</div></div></div>
+<a id="bk-legal-link" href="#">Legal</a>
+<script>
+(function(){
+var FLAG='bk_legal_agreed_v1';
+function agreed(){try{return window.localStorage.getItem(FLAG);}catch(e){return null;}}
+function $(id){return document.getElementById(id);}
+function openLegal(asGate){
+var m=$('bk-legal-overlay');if(!m)return;
+m.style.display='flex';
+$('bk-legal-agree').style.display=asGate?'inline-block':'none';
+$('bk-legal-close').style.display=asGate?'none':'inline-block';
+}
+function closeLegal(){var m=$('bk-legal-overlay');if(m)m.style.display='none';}
+function init(){
+if(!$('bk-legal-overlay'))return;
+$('bk-legal-agree').addEventListener('click',function(){try{window.localStorage.setItem(FLAG,JSON.stringify({t:Date.now()}));}catch(e){}closeLegal();});
+$('bk-legal-close').addEventListener('click',closeLegal);
+$('bk-legal-link').addEventListener('click',function(e){if(e&&e.preventDefault)e.preventDefault();openLegal(false);});
+if(!agreed())openLegal(true);
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}else{init();}
+})();
+</script>
+</body>
+</html>
